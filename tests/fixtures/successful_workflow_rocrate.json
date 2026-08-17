@@ -1,0 +1,132 @@
+{
+    "@context": "https://w3id.org/ro/crate/1.1/context",
+    "@graph": [
+        {
+            "@id": "./",
+            "@type": "Dataset",
+            "datePublished": "2026-08-13T11:04:16+00:00",
+            "author": {
+                "@id": "https://orcid.org/0000-0002-1825-0097"
+            },
+            "license": "CC-BY-4.0",
+            "keywords": [
+                "RO-Crate",
+                "test",
+                "workflow"
+            ],
+            "description": "A small workflow used to test RO-Crate generation",
+            "name": "RO-Crate Test Workflow",
+            "hasPart": [
+                {
+                    "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/workflow.yaml"
+                },
+                {
+                    "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/template.yaml"
+                }
+            ],
+            "mainEntity": {
+                "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/workflow.yaml"
+            }
+        },
+        {
+            "@id": "ro-crate-metadata.json",
+            "@type": "CreativeWork",
+            "conformsTo": [
+                {
+                    "@id": "https://w3id.org/ro/crate/1.1"
+                },
+                {
+                    "@id": "https://w3id.org/workflowhub/workflow-ro-crate/1.0"
+                }
+            ],
+            "about": {
+                "@id": "./"
+            }
+        },
+        {
+            "@id": "https://orcid.org/0000-0002-1825-0097",
+            "@type": "Person",
+            "name": "Lena Creator"
+        },
+        {
+            "@id": "https://argoproj.github.io/workflows",
+            "@type": "ComputerLanguage",
+            "name": "Argo",
+            "description": "Argo workflow language",
+            "url": "https://argoproj.github.io/workflows"
+        },
+        {
+            "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/workflow.yaml",
+            "@type": [
+                "File",
+                "ComputationalWorkflow",
+                "SoftwareSourceCode"
+            ],
+            "programmingLanguage": {
+                "@id": "https://argoproj.github.io/workflows"
+            },
+            "description": "Argo workflow definition",
+            "encodingFormat": "text/yaml",
+            "author": [
+                {
+                    "@id": "https://orcid.org/0000-0002-1825-0097"
+                }
+            ],
+            "name": "workflow.yaml",
+            "softwareRequirements": {
+                "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/template.yaml"
+            },
+            "input": [
+                {
+                    "@id": "#message"
+                },
+                {
+                    "@id": "#repeat"
+                }
+            ]
+        },
+        {
+            "@id": "http://localhost:8000/workflow-engines/dummy/workflows/rocrate-test-52wsh/template.yaml",
+            "@type": [
+                "File",
+                "ComputationalWorkflow",
+                "SoftwareSourceCode"
+            ],
+            "programmingLanguage": {
+                "@id": "https://argoproj.github.io/workflows"
+            },
+            "description": "Argo workflow template definition",
+            "encodingFormat": "text/yaml",
+            "author": [
+                {
+                    "@id": "https://orcid.org/0000-0002-1825-0097"
+                }
+            ],
+            "name": "template.yaml"
+        },
+        {
+            "@id": "#message",
+            "@type": "FormalParameter",
+            "name": "message",
+            "additionalType": "Text",
+            "valueRequired": false,
+            "conformsTo": {
+                "@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"
+            },
+            "description": "Message to be printed",
+            "defaultValue": "Default message"
+        },
+        {
+            "@id": "#repeat",
+            "@type": "FormalParameter",
+            "name": "repeat",
+            "additionalType": "Text",
+            "valueRequired": false,
+            "conformsTo": {
+                "@id": "https://bioschemas.org/profiles/FormalParameter/1.0-RELEASE"
+            },
+            "description": "How often to repeat the message",
+            "defaultValue": "3"
+        }
+    ]
+}

@@ -1,0 +1,602 @@
+{
+  "metadata": {
+    "name": "rocrate-test-52wsh",
+    "generateName": "rocrate-test-",
+    "namespace": "argo",
+    "uid": "062d30a7-e64a-40b4-9d1c-3bc833e45f56",
+    "resourceVersion": "550479",
+    "generation": 8,
+    "creationTimestamp": "2026-08-13T11:04:16Z",
+    "labels": {
+      "workflows.argoproj.io/completed": "true",
+      "workflows.argoproj.io/creator": "system-serviceaccount-argo-argo-connector",
+      "workflows.argoproj.io/phase": "Succeeded",
+      "workflows.argoproj.io/resubmitted-from-workflow": "rocrate-test-48k28"
+    },
+    "annotations": {
+      "dummy/author_names": "Lena Creator",
+      "dummy/author_ids": "0000-0002-1825-0097",
+      "dummy/keywords": "RO-Crate, test, workflow",
+      "dummy/license": "CC-BY-4.0",
+      "workflows.argoproj.io/description": "A small workflow used to test RO-Crate generation",
+      "workflows.argoproj.io/last-seen-version": "550452",
+      "workflows.argoproj.io/pod-name-format": "v2",
+      "workflows.argoproj.io/title": "RO-Crate Test Workflow"
+    },
+    "managedFields": [
+      {
+        "manager": "argo",
+        "operation": "Update",
+        "apiVersion": "argoproj.io/v1alpha1",
+        "time": "2026-08-13T11:04:16Z",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              ".": {},
+              "f:workflows.argoproj.io/pod-name-format": {}
+            },
+            "f:generateName": {},
+            "f:labels": {
+              ".": {},
+              "f:workflows.argoproj.io/creator": {},
+              "f:workflows.argoproj.io/resubmitted-from-workflow": {}
+            }
+          },
+          "f:spec": {}
+        }
+      },
+      {
+        "manager": "workflow-controller",
+        "operation": "Update",
+        "apiVersion": "argoproj.io/v1alpha1",
+        "time": "2026-08-13T11:04:36Z",
+        "fieldsType": "FieldsV1",
+        "fieldsV1": {
+          "f:metadata": {
+            "f:annotations": {
+              "f:tbd/author_names": {},
+              "f:tbd/keywords": {},
+              "f:tbd/license": {},
+              "f:workflows.argoproj.io/description": {},
+              "f:workflows.argoproj.io/last-seen-version": {},
+              "f:workflows.argoproj.io/title": {}
+            },
+            "f:labels": {
+              "f:workflows.argoproj.io/completed": {},
+              "f:workflows.argoproj.io/phase": {}
+            }
+          },
+          "f:status": {}
+        }
+      }
+    ]
+  },
+  "spec": {
+    "arguments": {
+      "parameters": [
+        {
+          "name": "message",
+          "default": "Default message",
+          "value": "Hello from the RO-Crate test",
+          "description": "Message to be printed"
+        },
+        {
+          "name": "repeat",
+          "default": "3",
+          "value": "5",
+          "description": "How often to repeat the message"
+        }
+      ]
+    },
+    "workflowTemplateRef": {
+      "name": "rocrate-test-template"
+    }
+  },
+  "status": {
+    "phase": "Succeeded",
+    "startedAt": "2026-08-13T11:04:16Z",
+    "finishedAt": "2026-08-13T11:04:36Z",
+    "progress": "2/2",
+    "nodes": {
+      "rocrate-test-52wsh": {
+        "id": "rocrate-test-52wsh",
+        "name": "rocrate-test-52wsh",
+        "displayName": "rocrate-test-52wsh",
+        "type": "Steps",
+        "templateName": "main",
+        "templateScope": "local/",
+        "phase": "Succeeded",
+        "startedAt": "2026-08-13T11:04:16Z",
+        "finishedAt": "2026-08-13T11:04:36Z",
+        "progress": "2/2",
+        "resourcesDuration": {
+          "cpu": 0,
+          "memory": 8
+        },
+        "children": [
+          "rocrate-test-52wsh-2525328040"
+        ],
+        "outboundNodes": [
+          "rocrate-test-52wsh-786777174"
+        ]
+      },
+      "rocrate-test-52wsh-1518523805": {
+        "id": "rocrate-test-52wsh-1518523805",
+        "name": "rocrate-test-52wsh[1]",
+        "displayName": "[1]",
+        "type": "StepGroup",
+        "templateScope": "local/",
+        "phase": "Succeeded",
+        "boundaryID": "rocrate-test-52wsh",
+        "startedAt": "2026-08-13T11:04:26Z",
+        "finishedAt": "2026-08-13T11:04:36Z",
+        "progress": "1/1",
+        "resourcesDuration": {
+          "cpu": 0,
+          "memory": 4
+        },
+        "nodeFlag": {},
+        "children": [
+          "rocrate-test-52wsh-786777174"
+        ]
+      },
+      "rocrate-test-52wsh-2525328040": {
+        "id": "rocrate-test-52wsh-2525328040",
+        "name": "rocrate-test-52wsh[0]",
+        "displayName": "[0]",
+        "type": "StepGroup",
+        "templateScope": "local/",
+        "phase": "Succeeded",
+        "boundaryID": "rocrate-test-52wsh",
+        "startedAt": "2026-08-13T11:04:16Z",
+        "finishedAt": "2026-08-13T11:04:26Z",
+        "progress": "2/2",
+        "resourcesDuration": {
+          "cpu": 0,
+          "memory": 8
+        },
+        "nodeFlag": {},
+        "children": [
+          "rocrate-test-52wsh-3436181020"
+        ]
+      },
+      "rocrate-test-52wsh-3436181020": {
+        "id": "rocrate-test-52wsh-3436181020",
+        "name": "rocrate-test-52wsh[0].generate-input",
+        "displayName": "generate-input",
+        "type": "Pod",
+        "templateName": "generate-input",
+        "templateScope": "local/",
+        "phase": "Succeeded",
+        "boundaryID": "rocrate-test-52wsh",
+        "startedAt": "2026-08-13T11:04:16Z",
+        "finishedAt": "2026-08-13T11:04:19Z",
+        "progress": "1/1",
+        "resourcesDuration": {
+          "cpu": 0,
+          "memory": 4
+        },
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "Hello from the RO-Crate test"
+            },
+            {
+              "name": "repeat",
+              "value": "5"
+            }
+          ]
+        },
+        "outputs": {
+          "artifacts": [
+            {
+              "name": "output",
+              "path": "/tmp/output.txt",
+              "s3": {
+                "key": "rocrate-test-52wsh/rocrate-test-52wsh-generate-input-3436181020/output.txt"
+              },
+              "archive": {
+                "none": {}
+              }
+            },
+            {
+              "name": "main-logs",
+              "s3": {
+                "key": "rocrate-test-52wsh/rocrate-test-52wsh-generate-input-3436181020/main.log"
+              }
+            }
+          ],
+          "exitCode": "0"
+        },
+        "children": [
+          "rocrate-test-52wsh-1518523805"
+        ],
+        "hostNodeName": "minikube",
+        "taskResultSynced": true
+      },
+      "rocrate-test-52wsh-786777174": {
+        "id": "rocrate-test-52wsh-786777174",
+        "name": "rocrate-test-52wsh[1].process",
+        "displayName": "process",
+        "type": "Pod",
+        "templateName": "process",
+        "templateScope": "local/",
+        "phase": "Succeeded",
+        "boundaryID": "rocrate-test-52wsh",
+        "startedAt": "2026-08-13T11:04:26Z",
+        "finishedAt": "2026-08-13T11:04:29Z",
+        "progress": "1/1",
+        "resourcesDuration": {
+          "cpu": 0,
+          "memory": 4
+        },
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "Hello from the RO-Crate test"
+            }
+          ],
+          "artifacts": [
+            {
+              "name": "input",
+              "path": "/tmp/input.txt",
+              "s3": {
+                "key": "rocrate-test-52wsh/rocrate-test-52wsh-generate-input-3436181020/output.txt"
+              },
+              "archive": {
+                "none": {}
+              }
+            }
+          ]
+        },
+        "outputs": {
+          "artifacts": [
+            {
+              "name": "result",
+              "path": "/tmp/result.txt",
+              "s3": {
+                "key": "rocrate-test-52wsh/rocrate-test-52wsh-process-786777174/result.txt"
+              },
+              "archive": {
+                "none": {}
+              }
+            },
+            {
+              "name": "main-logs",
+              "s3": {
+                "key": "rocrate-test-52wsh/rocrate-test-52wsh-process-786777174/main.log"
+              }
+            }
+          ],
+          "exitCode": "0"
+        },
+        "hostNodeName": "minikube",
+        "taskResultSynced": true
+      }
+    },
+    "storedTemplates": {
+      "namespaced/rocrate-test-template/generate-input": {
+        "name": "generate-input",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message"
+            },
+            {
+              "name": "repeat"
+            }
+          ]
+        },
+        "outputs": {
+          "artifacts": [
+            {
+              "name": "output",
+              "path": "/tmp/output.txt",
+              "archive": {
+                "none": {}
+              }
+            }
+          ]
+        },
+        "metadata": {},
+        "container": {
+          "name": "",
+          "image": "alpine:3.20",
+          "command": [
+            "sh",
+            "-c"
+          ],
+          "args": [
+            "for i in $(seq 1 {{inputs.parameters.repeat}}); do\n  echo \"{{inputs.parameters.message}}\" >> /tmp/output.txt\ndone\n"
+          ],
+          "resources": {}
+        }
+      },
+      "namespaced/rocrate-test-template/main": {
+        "name": "main",
+        "inputs": {},
+        "outputs": {},
+        "metadata": {},
+        "steps": [
+          [
+            {
+              "name": "generate-input",
+              "template": "generate-input",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "{{workflow.parameters.message}}"
+                  },
+                  {
+                    "name": "repeat",
+                    "value": "{{workflow.parameters.repeat}}"
+                  }
+                ]
+              }
+            }
+          ],
+          [
+            {
+              "name": "process",
+              "template": "process",
+              "arguments": {
+                "parameters": [
+                  {
+                    "name": "message",
+                    "value": "{{workflow.parameters.message}}"
+                  }
+                ],
+                "artifacts": [
+                  {
+                    "name": "input",
+                    "from": "{{steps.generate-input.outputs.artifacts.output}}"
+                  }
+                ]
+              }
+            }
+          ]
+        ]
+      },
+      "namespaced/rocrate-test-template/process": {
+        "name": "process",
+        "inputs": {
+          "parameters": [
+            {
+              "name": "message"
+            }
+          ],
+          "artifacts": [
+            {
+              "name": "input",
+              "path": "/tmp/input.txt"
+            }
+          ]
+        },
+        "outputs": {
+          "artifacts": [
+            {
+              "name": "result",
+              "path": "/tmp/result.txt",
+              "archive": {
+                "none": {}
+              }
+            }
+          ]
+        },
+        "metadata": {},
+        "container": {
+          "name": "",
+          "image": "alpine:3.20",
+          "command": [
+            "sh",
+            "-c"
+          ],
+          "args": [
+            "echo \"Processed workflow input:\" > /tmp/result.txt\ncat /tmp/input.txt >> /tmp/result.txt\necho \"Original message: {{inputs.parameters.message}}\" >> /tmp/result.txt\n"
+          ],
+          "resources": {}
+        }
+      }
+    },
+    "conditions": [
+      {
+        "type": "PodRunning",
+        "status": "False"
+      },
+      {
+        "type": "Completed",
+        "status": "True"
+      }
+    ],
+    "resourcesDuration": {
+      "cpu": 0,
+      "memory": 8
+    },
+    "storedWorkflowTemplateSpec": {
+      "templates": [
+        {
+          "name": "main",
+          "inputs": {},
+          "outputs": {},
+          "metadata": {},
+          "steps": [
+            [
+              {
+                "name": "generate-input",
+                "template": "generate-input",
+                "arguments": {
+                  "parameters": [
+                    {
+                      "name": "message",
+                      "value": "{{workflow.parameters.message}}"
+                    },
+                    {
+                      "name": "repeat",
+                      "value": "{{workflow.parameters.repeat}}"
+                    }
+                  ]
+                }
+              }
+            ],
+            [
+              {
+                "name": "process",
+                "template": "process",
+                "arguments": {
+                  "parameters": [
+                    {
+                      "name": "message",
+                      "value": "{{workflow.parameters.message}}"
+                    }
+                  ],
+                  "artifacts": [
+                    {
+                      "name": "input",
+                      "from": "{{steps.generate-input.outputs.artifacts.output}}"
+                    }
+                  ]
+                }
+              }
+            ]
+          ]
+        },
+        {
+          "name": "generate-input",
+          "inputs": {
+            "parameters": [
+              {
+                "name": "message"
+              },
+              {
+                "name": "repeat"
+              }
+            ]
+          },
+          "outputs": {
+            "artifacts": [
+              {
+                "name": "output",
+                "path": "/tmp/output.txt",
+                "archive": {
+                  "none": {}
+                }
+              }
+            ]
+          },
+          "metadata": {},
+          "container": {
+            "name": "",
+            "image": "alpine:3.20",
+            "command": [
+              "sh",
+              "-c"
+            ],
+            "args": [
+              "for i in $(seq 1 {{inputs.parameters.repeat}}); do\n  echo \"{{inputs.parameters.message}}\" >> /tmp/output.txt\ndone\n"
+            ],
+            "resources": {}
+          }
+        },
+        {
+          "name": "process",
+          "inputs": {
+            "parameters": [
+              {
+                "name": "message"
+              }
+            ],
+            "artifacts": [
+              {
+                "name": "input",
+                "path": "/tmp/input.txt"
+              }
+            ]
+          },
+          "outputs": {
+            "artifacts": [
+              {
+                "name": "result",
+                "path": "/tmp/result.txt",
+                "archive": {
+                  "none": {}
+                }
+              }
+            ]
+          },
+          "metadata": {},
+          "container": {
+            "name": "",
+            "image": "alpine:3.20",
+            "command": [
+              "sh",
+              "-c"
+            ],
+            "args": [
+              "echo \"Processed workflow input:\" > /tmp/result.txt\ncat /tmp/input.txt >> /tmp/result.txt\necho \"Original message: {{inputs.parameters.message}}\" >> /tmp/result.txt\n"
+            ],
+            "resources": {}
+          }
+        }
+      ],
+      "entrypoint": "main",
+      "arguments": {
+        "parameters": [
+          {
+            "name": "message",
+            "default": "Default message",
+            "value": "Hello from the RO-Crate test",
+            "description": "Message to be printed"
+          },
+          {
+            "name": "repeat",
+            "default": "3",
+            "value": "5",
+            "description": "How often to repeat the message"
+          }
+        ]
+      },
+      "serviceAccountName": "workflow-runner",
+      "workflowTemplateRef": {
+        "name": "rocrate-test-template"
+      },
+      "workflowMetadata": {
+        "annotations": {
+          "tbd/author_names": "Lena Creator",
+          "tbd/keywords": "RO-Crate, test, workflow",
+          "tbd/license": "CC-BY-4.",
+          "workflows.argoproj.io/description": "A small workflow used to test RO-Crate generation",
+          "workflows.argoproj.io/title": "RO-Crate Test Workflow"
+        }
+      },
+      "artifactGC": {
+        "serviceAccountName": "workflow-runner"
+      }
+    },
+    "artifactRepositoryRef": {
+      "default": true,
+      "artifactRepository": {
+        "archiveLogs": true,
+        "s3": {
+          "endpoint": "minio:9000",
+          "bucket": "my-bucket",
+          "insecure": true,
+          "accessKeySecret": {
+            "name": "argo-s3-secret",
+            "key": "accessKey"
+          },
+          "secretKeySecret": {
+            "name": "argo-s3-secret",
+            "key": "secretKey"
+          }
+        }
+      }
+    },
+    "artifactGCStatus": {
+      "notSpecified": true
+    }
+  }
+}
