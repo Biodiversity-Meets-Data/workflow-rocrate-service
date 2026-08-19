@@ -1,10 +1,8 @@
-import json
-
 import yaml
 from fastapi import APIRouter, Response
 
 from app.argo import reconstruct_template, reconstruct_workflow
-from app.rocrate import generate_WROC_from_workflow
+from app.rocrate import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.workflow_engines.base import WorkflowEngine
 from app.workflow_engines.dummy_engine import DummyEngine
 from app.workflow_engines.lifewatch_engine import LifeWatchEngine
@@ -77,8 +75,11 @@ def get_template(engine: str, workflow_id: str):
     )
 
 
-@router.get("/{workflow_id}/metadata.json")
-def get_metadata(engine: str, workflow_id: str):
+@router.get(
+    "/{workflow_id}/metadata",
+    description="Get the RO-Crate metadata for a workflow in JSON format. The profile parameter can be either 'WROC' or 'WRROC'.",
+)
+def get_metadata(engine: str, workflow_id: str, profile: str = "WROC"):
     try:
         wfl_engine = get_engine(engine)
     except ValueError as e:
@@ -89,16 +90,24 @@ def get_metadata(engine: str, workflow_id: str):
         )
 
     wfl = wfl_engine.get_workflow(workflow_id, token="fake-token")
+
     try:
-        rocrate = generate_WROC_from_workflow(
-            wfl, prefix=wfl_engine.annotations_prefix, base_url=wfl_engine.base_url
-        )
+        if profile == "WROC":
+            rocrate = generate_WROC_from_workflow(
+                wfl, prefix=wfl_engine.annotations_prefix, base_url=wfl_engine.base_url
+            )
+        elif profile == "WRROC":
+            rocrate = generate_WRROC_from_workflow(
+                wfl, prefix=wfl_engine.annotations_prefix, base_url=wfl_engine.base_url
+            )
+        else:
+            return Response(
+                content=f"Unknown profile: {profile}",
+                media_type="text/plain",
+                status_code=400,
+            )
     except ValueError as e:
         return Response(content=str(e), media_type="text/plain", status_code=500)
     metadata_dict = rocrate.metadata.generate()
 
-    return Response(
-        content=json.dumps(metadata_dict),
-        media_type="application/json",
-        headers={"Content-Disposition": "attachment; filename=rocrate-metadata.json"},
-    )
+    return metadata_dict

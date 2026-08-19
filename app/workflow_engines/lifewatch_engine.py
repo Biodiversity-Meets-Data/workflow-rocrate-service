@@ -6,6 +6,7 @@ from app.workflow_engines.base import WorkflowEngine
 class LifeWatchEngine(WorkflowEngine):
     name: str = "lifewatch"
     annotations_prefix: str = "lifewatch"
+    labels_prefix: str = "workflows.lifewatch.eu"
     base_url: str = "https://workflows-demo.bmd.lifewatch.dev/v1"
 
     def get_workflow(self, workflow_id: str, token: str) -> dict:
