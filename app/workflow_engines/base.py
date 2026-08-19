@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.models import Workflow
+from app.argo.models import Workflow
 
 
 class WorkflowEngine(ABC):
@@ -8,6 +8,10 @@ class WorkflowEngine(ABC):
     annotations_prefix: str
     labels_prefix: str = "workflows.argoproj.io"
     base_url: str
+
+    @abstractmethod
+    def authenticate(self, token: str) -> None:
+        pass
 
     @abstractmethod
     def get_workflow(self, workflow_id: str, token: str) -> Workflow:

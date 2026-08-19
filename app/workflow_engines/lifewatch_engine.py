@@ -1,5 +1,6 @@
 import requests
 
+from app.exceptions import AuthenticationError
 from app.workflow_engines.base import WorkflowEngine
 
 
@@ -8,6 +9,10 @@ class LifeWatchEngine(WorkflowEngine):
     annotations_prefix: str = "lifewatch"
     labels_prefix: str = "workflows.lifewatch.eu"
     base_url: str = "https://workflows-demo.bmd.lifewatch.dev/v1"
+
+    def authenticate(self, token: str) -> None:
+        if token != "correct-token":
+            raise AuthenticationError("Invalid token for LifeWatchEngine")
 
     def get_workflow(self, workflow_id: str, token: str) -> dict:
 
