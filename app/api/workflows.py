@@ -1,7 +1,16 @@
 from typing import Annotated, Literal
 
 import yaml
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -220,4 +229,35 @@ def get_workflow_run(
         content=workflow_run,
         media_type="application/yaml",
         headers={"Content-Disposition": "attachment; filename=workflow-run.yaml"},
+    )
+
+
+@router.post(
+    "",
+    description="This is a placeholder endpoint for workflow submission. It is not implemented yet.",
+)
+def submit_workflow(
+    engine: str,
+    rocrate_file: Annotated[
+        UploadFile,
+        File(description="Workflow RO-Crate .zip file containing the workflow"),
+    ],
+    model_parameters: Annotated[
+        str,
+        Form(
+            description="Model parameters for the workflow",
+            examples=[{"param1": "value1", "param2": "value2"}],
+        ),
+    ],
+    wfl_engine: WorkflowEngine = Depends(get_engine),
+    token: str = Depends(check_auth),
+):
+    if rocrate_file.content_type not in ["application/zip", "application/octet-stream"]:
+        raise HTTPException(
+            status_code=400,
+            detail="File is not a zip file",
+        )
+    raise HTTPException(
+        status_code=501,
+        detail="Workflow submission is not implemented yet.",
     )
