@@ -139,3 +139,85 @@ def get_metadata(
     metadata_dict = rocrate.metadata.generate()
 
     return metadata_dict
+
+
+@router.get(
+    "/{workflow_id}/rocrate",
+    description="Get the RO-Crate for a workflow in ZIP format. ",
+)
+def get_rocrate(
+    engine: str,
+    workflow_id: str,
+    profile: Annotated[
+        Literal["WROC", "WRROC"],
+        Query(
+            description="Define which RO-Crate profile the returned metadata should conform to: "
+            "Workflow RO-Crate ('WROC') or Workflow Run RO-Crate ('WRROC')."
+        ),
+    ] = "WROC",
+    validate_rocrate: Annotated[
+        bool,
+        Query(
+            description="This validates the generated RO-Crate against the RO-Crate profile schema. "
+            "This is a slow operation and should be used mainly for testing purposes."
+        ),
+    ] = False,
+    wfl_engine: WorkflowEngine = Depends(get_engine),
+    token: str = Depends(check_auth),
+):
+    wfl = wfl_engine.get_workflow(workflow_id, token=token)
+
+    try:
+        if profile == "WROC":
+            rocrate = generate_WROC_from_workflow(
+                wfl,
+                prefix=wfl_engine.annotations_prefix,
+                base_url=wfl_engine.base_url,
+                validate=validate_rocrate,
+            )
+        elif profile == "WRROC":
+            rocrate = generate_WRROC_from_workflow(
+                wfl,
+                prefix=wfl_engine.annotations_prefix,
+                base_url=wfl_engine.base_url,
+                validate=validate_rocrate,
+            )
+    except ValueError as e:
+        return Response(content=str(e), media_type="text/plain", status_code=500)
+
+    return StreamingResponse(
+        content=rocrate.stream_zip(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename={engine}_{workflow_id}.zip"
+        },
+    )
+
+
+@router.get(
+    "/{workflow_id}/workflow-run.yaml",
+)
+def get_workflow_run(
+    engine: str,
+    workflow_id: str,
+    wfl_engine: WorkflowEngine = Depends(get_engine),
+    token: str = Depends(check_auth),
+):
+
+    wfl = wfl_engine.get_workflow(workflow_id, token=token)
+    workflow_run = reconstruct_workflow_run(wfl)
+
+    if not workflow_run:
+        return Response(
+            content="No workflow run found for this workflow.",
+            media_type="text/plain",
+            status_code=404,
+        )
+
+    workflow_run = yaml.safe_dump(workflow_run, sort_keys=False)
+
+    return Response(
+        content=workflow_run,
+        media_type="application/yaml",
+        headers={"Content-Disposition": "attachment; filename=workflow-run.yaml"},
+    )
