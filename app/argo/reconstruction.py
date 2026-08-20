@@ -1,9 +1,13 @@
 from typing import Any
 
-from app.models import Workflow
+from app.argo.models import Workflow
 
 
 def reconstruct_workflow(wfl: Workflow, annotations_prefix: str) -> dict[str, Any]:
+    """
+    Reconstructs a Workflow object into a dictionary representation, preserving specific `metadata` fields,
+    retaining the full `spec` of the workflow, and omitting the `status` information.
+    """
     annotation_keys_to_keep = [
         f"{annotations_prefix}/author_names",
         f"{annotations_prefix}/author_ids",
@@ -28,13 +32,17 @@ def reconstruct_workflow(wfl: Workflow, annotations_prefix: str) -> dict[str, An
     reconstructed = {
         "kind": "Workflow",
         "metadata": metadata,
-        "spec": wfl.spec,
+        "spec": wfl.spec.model_dump(),
     }
 
     return reconstructed
 
 
 def reconstruct_template(wfl: Workflow) -> dict[str, Any]:
+    """
+    Reconstructs a Workflow object into a dictionary representation of a WorkflowTemplate,
+    converting the `status.storedWorkflowTemplateSpec` into the `spec` of the WorkflowTemplate.
+    """
     if (
         wfl.spec.workflowTemplateRef is not None
         and wfl.status is not None
@@ -54,3 +62,20 @@ def reconstruct_template(wfl: Workflow) -> dict[str, Any]:
         }
         return template
     return {}
+
+
+def reconstruct_workflow_run(wfl: Workflow) -> dict[str, Any]:
+    """
+    Returns the complete dictionary representation of the Workflow object, including all fields.
+    Returns an empty dictionary if the `status` field is None,
+    indicating that the workflow run has not been completed or is not available.
+    """
+    if wfl.status is None:
+        return {}
+
+    wfl_dict = wfl.model_dump()
+    wfl_dict["metadata"]["managedFields"] = (
+        None  # Remove managedFields to avoid unnecessary clutter
+    )
+
+    return wfl_dict

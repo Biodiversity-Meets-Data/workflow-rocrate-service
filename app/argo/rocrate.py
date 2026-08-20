@@ -6,10 +6,12 @@ from rocrate.model import ContextEntity, File, Person
 from rocrate.rocrate import ROCrate
 from rocrate_validator.services import validate_metadata_as_dict
 
-from app.models import Workflow, WorkflowRun, WorkflowStatus
+from app.argo.models import Workflow, WorkflowRun, WorkflowStatus
 
 
-def generate_WROC_from_workflow(wfl: Workflow, prefix: str, base_url: str) -> ROCrate:
+def generate_WROC_from_workflow(
+    wfl: Workflow, prefix: str, base_url: str, validate: bool = False
+) -> ROCrate:
     crate = ROCrate()
 
     _add_metadata_from_annotations(wfl, crate, prefix)
@@ -23,12 +25,14 @@ def generate_WROC_from_workflow(wfl: Workflow, prefix: str, base_url: str) -> RO
     ]
 
     _add_date_published(wfl, crate)
-
-    validate_rocrate(crate, profile_identifier="workflow-ro-crate-1.0")
+    if validate:
+        validate_rocrate(crate, profile_identifier="workflow-ro-crate-1.0")
     return crate
 
 
-def generate_WRROC_from_workflow(wfl: Workflow, prefix: str, base_url: str) -> ROCrate:
+def generate_WRROC_from_workflow(
+    wfl: Workflow, prefix: str, base_url: str, validate: bool = False
+) -> ROCrate:
     wfl = cast(WorkflowRun, wfl)
     crate = ROCrate()
 
@@ -36,6 +40,7 @@ def generate_WRROC_from_workflow(wfl: Workflow, prefix: str, base_url: str) -> R
     wfl_object = _add_workflow_definition_files(wfl, crate, base_url)
     _add_workflow_params(wfl, crate, wfl_object, wfl_run=True)
     _add_create_action(wfl, crate, wfl_object)
+    _add_workflow_run_file(wfl, crate, base_url)
     _add_date_published(wfl, crate)
     wfl_status = wfl.status
     _add_artifacts(wfl_status, crate)
@@ -56,8 +61,32 @@ def generate_WRROC_from_workflow(wfl: Workflow, prefix: str, base_url: str) -> R
         ],
     )
 
-    validate_rocrate(crate, profile_identifier="workflow-run-crate-0.5")
+    if validate:
+        validate_rocrate(crate, profile_identifier="workflow-run-crate-0.5")
     return crate
+
+
+def _add_workflow_run_file(wfl: WorkflowRun, crate: ROCrate, base_url: str):
+    workflow_id = wfl.metadata["name"]
+    create_action = cast(ContextEntity, crate.get_by_type("CreateAction")[0])
+
+    # Add the workflow-run.yaml file to the RO-Crate
+    workflow_run_object = cast(
+        File,
+        crate.add_file(
+            source=f"{base_url}/{workflow_id}/workflow-run.yaml",
+            properties={
+                "@type": ["File"],
+                "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
+                "description": "Argo workflow run",
+                "encodingFormat": "text/yaml",
+                "name": "workflow-run.yaml",
+                "about": {"@id": create_action["@id"]},
+            },
+        ),
+    )
+
+    create_action["subjectOf"] = {"@id": workflow_run_object["@id"]}
 
 
 def _add_conforms_to(crate: ROCrate, profile_identifiers: list[str]):
@@ -301,7 +330,6 @@ def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate) -> None:
                         "name": "main.log",
                         "description": f"Main logs from node {node_name}",
                         "encodingFormat": "text/plain",
-                        "about": {"@id": create_action_object["@id"]},
                     },
                 )
             else:
@@ -314,7 +342,7 @@ def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate) -> None:
                     },
                 )
 
-                create_action_object.append_to("result", artifact_file)
+            create_action_object.append_to("result", artifact_file)
 
 
 def validate_rocrate(
