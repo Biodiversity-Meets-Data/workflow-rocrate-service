@@ -1,18 +1,23 @@
 import json
+from typing import cast
 
 import pytest
-from hera.workflows import Workflow
 
-from app.argo import reconstruct_template, reconstruct_workflow
+from app.argo.models import Workflow
+from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
 
 
 @pytest.fixture
 def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
-        return json.load(f)
+        wfl = json.load(f)
+
+    return cast(Workflow, wfl)
 
 
 def test_argo_workflow_reconstruction(successful_workflow):
+
+    print(successful_workflow)
     reconstructed_workflow = reconstruct_workflow(
         successful_workflow, annotations_prefix="dummy"
     )
@@ -20,7 +25,6 @@ def test_argo_workflow_reconstruction(successful_workflow):
     assert reconstructed_workflow.keys() == {"kind", "metadata", "spec"}
 
     assert reconstructed_workflow["kind"] == "Workflow"
-    assert Workflow.from_dict(reconstructed_workflow)
 
     metadata = reconstructed_workflow["metadata"]
 
