@@ -20,6 +20,7 @@ dev = [
 
 [tool.ruff.lint]
 extend-select = ["I"]
+extend-ignore = ["B008"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

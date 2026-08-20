@@ -17,15 +17,10 @@ from app.workflow_engines.base import WorkflowEngine
 
 router = APIRouter(prefix="/workflow-engines/{engine}/workflows", tags=["workflows"])
 
-engines: dict[str, WorkflowEngine] = {
-    "lifewatch": LifeWatchEngine(),
-    "dummy": DummyEngine(),
-}
 
-
-def get_engine(name: str) -> WorkflowEngine:
+def get_engine(engine: str) -> WorkflowEngine:
     try:
-        return engines[name]
+        wfl_engine = settings.engines[engine]
     except KeyError:
         raise HTTPException(
             detail=f"Unknown workflow engine: {engine}",
