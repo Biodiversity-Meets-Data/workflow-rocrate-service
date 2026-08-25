@@ -1,5 +1,4 @@
 import json
-from typing import cast
 
 import pytest
 
@@ -11,13 +10,10 @@ from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
 def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
-
-    return cast(Workflow, wfl)
+    return Workflow.model_validate(wfl)
 
 
 def test_argo_workflow_reconstruction(successful_workflow):
-
-    print(successful_workflow)
     reconstructed_workflow = reconstruct_workflow(
         successful_workflow, annotations_prefix="dummy"
     )
@@ -40,7 +36,7 @@ def test_argo_workflow_reconstruction(successful_workflow):
         },
     }
 
-    assert reconstructed_workflow["spec"] == successful_workflow["spec"]
+    assert reconstructed_workflow["spec"] == successful_workflow.spec.model_dump()
 
 
 def test_argo_template_reconstruction(successful_workflow):
@@ -61,7 +57,7 @@ def test_argo_template_reconstruction(successful_workflow):
 
 def test_argo_template_reconstruction_no_template(successful_workflow):
     # Remove the workflowTemplateRef from the spec to simulate a workflow without a template
-    successful_workflow["spec"].pop("workflowTemplateRef", None)
+    successful_workflow.spec.workflowTemplateRef = None
 
     reconstructed_template = reconstruct_template(successful_workflow)
 
