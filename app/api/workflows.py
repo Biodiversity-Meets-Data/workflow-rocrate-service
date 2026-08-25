@@ -14,12 +14,12 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.argo.reconstruction import (
     reconstruct_template,
     reconstruct_workflow,
     reconstruct_workflow_run,
 )
-from app.argo.rocrate import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.config import settings
 from app.exceptions import AuthenticationError
 from app.workflow_engines.base import WorkflowEngine

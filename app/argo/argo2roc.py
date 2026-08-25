@@ -144,17 +144,19 @@ def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
         f"https://orcid.org/{author_id.strip()}"
         for author_id in workflow_annotations[f"{prefix}/author_ids"].split(",")
     ]
-
     if len(author_names) != len(author_ids):
         raise ValueError("The number of author names and author IDs must be the same.")
+
+    authors = []
 
     for name, identifier in zip(author_names, author_ids):
         author = cast(
             Person,
             crate.add(Person(crate, identifier=identifier, properties={"name": name})),
         )
+        authors.append({"@id": author["@id"]})
 
-        crate.root_dataset["author"] = {"@id": author["@id"]}
+    crate.root_dataset["author"] = authors
 
     crate.root_dataset["license"] = workflow_annotations[f"{prefix}/license"]
 
