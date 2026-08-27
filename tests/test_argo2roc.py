@@ -3,14 +3,17 @@ import json
 import pytest
 
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
-from app.argo.models import Workflow
+from app.argo.models import Author
+from app.workflow_engines.dummy_engine import DummyEngine
 
 
 @pytest.fixture
 def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
-    return Workflow.model_validate(wfl)
+
+    engine = DummyEngine()
+    return engine.parse_workflow(wfl)
 
 
 def test_generate_WROC_from_workflow(successful_workflow):
@@ -34,10 +37,11 @@ def test_generate_WRROC_from_workflow(successful_workflow):
 
 
 def test_generate_WROC_from_workflow_multiple_authors(successful_workflow):
-    annotations = successful_workflow.metadata.annotations
-    annotations["dummy/author_names"] = "Lena Creator, Another Author"
-    annotations["dummy/author_ids"] = "0000-0002-1825-0097, 0000-0012-3456-7890"
-    successful_workflow.metadata.annotations = annotations
+    authors = successful_workflow.metadata.annotations.authors
+    authors.append(
+        Author(name="Another Author", id="https://orcid.org/0000-0012-3456-7890")
+    )
+    successful_workflow.metadata.annotations.authors = authors
 
     crate = generate_WROC_from_workflow(
         successful_workflow,

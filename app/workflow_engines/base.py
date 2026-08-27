@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from app.argo.models import Workflow
+from app.argo.models import Annotations, Author, Workflow
 
 
 class WorkflowEngine(ABC):
@@ -20,3 +20,60 @@ class WorkflowEngine(ABC):
     @abstractmethod
     def post_workflow(self, workflow_data: dict, token: str) -> Workflow:
         pass
+
+    def parse_workflow(self, data: dict) -> Workflow:
+        annotations = data["metadata"].get("annotations", {})
+        prefix = self.annotations_prefix
+
+        authors = [
+            Author(name=name.strip(), id=id.strip())
+            for name, id in zip(
+                annotations[f"{prefix}/author_names"].split(","),
+                annotations[f"{prefix}/author_ids"].split(","),
+                strict=True,
+            )
+        ]
+
+        workflow_annotations = Annotations(
+            authors=authors,
+            license=annotations[f"{prefix}/license"],
+            keywords=[
+                keyword.strip()
+                for keyword in annotations[f"{prefix}/keywords"].split(",")
+            ],
+            description=annotations["workflows.argoproj.io/description"],
+            title=annotations["workflows.argoproj.io/title"],
+        )
+
+        metadata = data["metadata"].copy()
+        metadata["annotations"] = workflow_annotations
+
+        data = data.copy()
+        data["metadata"] = metadata
+
+        return Workflow.model_validate(data)
+
+    def serialize_workflow(self, workflow: Workflow) -> dict:
+
+        data = workflow.model_dump(
+            exclude_none=True,
+        )
+
+        annotations = data["metadata"]["annotations"]
+
+        # Replace normalized annotations with Argo annotation keys
+        data["metadata"]["annotations"] = {
+            # **{key: value for key, value in annotations.items() if "/" in key},
+            f"{self.annotations_prefix}/author_names": ",".join(
+                [author["name"] for author in annotations["authors"]]
+            ),
+            f"{self.annotations_prefix}/author_ids": ",".join(
+                [author["id"] for author in annotations["authors"]]
+            ),
+            f"{self.annotations_prefix}/keywords": ", ".join(annotations["keywords"]),
+            f"{self.annotations_prefix}/license": annotations["license"],
+            "workflows.argoproj.io/description": annotations["description"],
+            "workflows.argoproj.io/title": annotations["title"],
+        }
+
+        return data

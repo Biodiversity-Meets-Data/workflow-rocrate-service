@@ -122,50 +122,22 @@ def _add_date_published(wfl: Workflow, crate: ROCrate):
 def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
     workflow_annotations = wfl.metadata.annotations
 
-    required_fields = [
-        f"{prefix}/author_names",
-        f"{prefix}/author_ids",
-        f"{prefix}/license",
-        f"{prefix}/keywords",
-        "workflows.argoproj.io/description",
-        "workflows.argoproj.io/title",
-    ]
-
-    for field in required_fields:
-        if field not in workflow_annotations:
-            raise ValueError(f"Missing required annotation: {field}")
-
-    author_names = [
-        author_name.strip()
-        for author_name in workflow_annotations[f"{prefix}/author_names"].split(",")
-    ]
-
-    author_ids = [
-        f"https://orcid.org/{author_id.strip()}"
-        for author_id in workflow_annotations[f"{prefix}/author_ids"].split(",")
-    ]
-    if len(author_names) != len(author_ids):
-        raise ValueError("The number of author names and author IDs must be the same.")
-
-    for name, identifier in zip(author_names, author_ids):
-        author = cast(
+    for author in workflow_annotations.authors:
+        author_object = cast(
             Person,
-            crate.add(Person(crate, identifier=identifier, properties={"name": name})),
+            crate.add(
+                Person(crate, identifier=author.id, properties={"name": author.name})
+            ),
         )
-        crate.root_dataset.append_to("author", author)
+        crate.root_dataset.append_to("author", author_object)
 
-    crate.root_dataset["license"] = workflow_annotations[f"{prefix}/license"]
+    crate.root_dataset["license"] = workflow_annotations.license
 
-    crate.root_dataset["keywords"] = [
-        keyword.strip()
-        for keyword in workflow_annotations[f"{prefix}/keywords"].split(",")
-    ]
+    crate.root_dataset["keywords"] = workflow_annotations.keywords
 
-    crate.root_dataset["description"] = workflow_annotations[
-        "workflows.argoproj.io/description"
-    ]
+    crate.root_dataset["description"] = workflow_annotations.description
 
-    crate.root_dataset["name"] = workflow_annotations["workflows.argoproj.io/title"]
+    crate.root_dataset["name"] = workflow_annotations.title
 
 
 def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):

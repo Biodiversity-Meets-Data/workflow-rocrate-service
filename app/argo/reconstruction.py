@@ -1,41 +1,23 @@
 from typing import Any
 
 from app.argo.models import Workflow
+from app.workflow_engines.base import WorkflowEngine
 
 
-def reconstruct_workflow(wfl: Workflow, annotations_prefix: str) -> dict[str, Any]:
+def reconstruct_workflow(wfl: Workflow, engine: WorkflowEngine) -> dict[str, Any]:
     """
     Reconstructs a Workflow object into a dictionary representation, preserving specific `metadata` fields,
     retaining the full `spec` of the workflow, and omitting the `status` information.
     """
-    annotation_keys_to_keep = [
-        f"{annotations_prefix}/author_names",
-        f"{annotations_prefix}/author_ids",
-        f"{annotations_prefix}/keywords",
-        f"{annotations_prefix}/license",
-        "workflows.argoproj.io/description",
-        "workflows.argoproj.io/title",
-    ]
-    annotations = {
-        key: wfl.metadata.annotations[key]
-        for key in annotation_keys_to_keep
-        if key in wfl.metadata.annotations
-    }
 
-    metadata = {}
+    wfl_dict = engine.serialize_workflow(wfl)
 
-    if wfl.metadata.generateName is not None:
-        metadata["generateName"] = wfl.metadata.generateName
-    if annotations not in (None, {}):
-        metadata["annotations"] = annotations
+    wfl_dict.pop("status", None)
+    wfl_dict["metadata"].pop("name", None)
+    wfl_dict["metadata"].pop("creationTimestamp", None)
+    wfl_dict["metadata"].pop("labels", None)
 
-    reconstructed = {
-        "kind": "Workflow",
-        "metadata": metadata,
-        "spec": wfl.spec.model_dump(),
-    }
-
-    return reconstructed
+    return wfl_dict
 
 
 def reconstruct_template(wfl: Workflow) -> dict[str, Any]:
@@ -64,7 +46,7 @@ def reconstruct_template(wfl: Workflow) -> dict[str, Any]:
     return {}
 
 
-def reconstruct_workflow_run(wfl: Workflow) -> dict[str, Any]:
+def reconstruct_workflow_run(wfl: Workflow, engine: WorkflowEngine) -> dict[str, Any]:
     """
     Returns the complete dictionary representation of the Workflow object, including all fields.
     Returns an empty dictionary if the `status` field is None,
@@ -73,9 +55,4 @@ def reconstruct_workflow_run(wfl: Workflow) -> dict[str, Any]:
     if wfl.status is None:
         return {}
 
-    wfl_dict = wfl.model_dump()
-    wfl_dict["metadata"]["managedFields"] = (
-        None  # Remove managedFields to avoid unnecessary clutter
-    )
-
-    return wfl_dict
+    return engine.serialize_workflow(wfl)

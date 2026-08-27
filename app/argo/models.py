@@ -61,15 +61,29 @@ class WorkflowSpec(BaseModel):
     workflowTemplateRef: dict | None = None
 
 
+class Author(BaseModel):
+    name: str
+    id: str
+
+
+class Annotations(BaseModel):
+    authors: list[Author]
+    license: str
+    keywords: list[str]
+    description: str
+    title: str
+
+
 class WorkflowMetadata(BaseModel):
     name: str | None = None
     generateName: str | None = None
-    annotations: dict[str, str]
+    annotations: Annotations
     labels: dict
     creationTimestamp: datetime | None = None
 
 
 class Workflow(BaseModel):
+    kind: Literal["Workflow", "WorkflowTemplate"] = "Workflow"
     metadata: WorkflowMetadata
     spec: WorkflowSpec
     status: WorkflowStatus | None = None

@@ -15,7 +15,7 @@
     },
     "annotations": {
       "dummy/author_names": "Lena Creator",
-      "dummy/author_ids": "0000-0002-1825-0097",
+      "dummy/author_ids": "https://orcid.org/0000-0002-1825-0097",
       "dummy/keywords": "RO-Crate, test, workflow",
       "dummy/license": "CC-BY-4.0",
       "workflows.argoproj.io/description": "A small workflow used to test RO-Crate generation",

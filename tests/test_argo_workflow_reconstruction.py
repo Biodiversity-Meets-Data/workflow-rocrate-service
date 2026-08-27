@@ -2,20 +2,22 @@ import json
 
 import pytest
 
-from app.argo.models import Workflow
 from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
+from app.workflow_engines.dummy_engine import DummyEngine
 
 
 @pytest.fixture
 def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
-    return Workflow.model_validate(wfl)
+
+    engine = DummyEngine()
+    return engine.parse_workflow(wfl)
 
 
 def test_argo_workflow_reconstruction(successful_workflow):
     reconstructed_workflow = reconstruct_workflow(
-        successful_workflow, annotations_prefix="dummy"
+        successful_workflow, engine=DummyEngine()
     )
 
     assert reconstructed_workflow.keys() == {"kind", "metadata", "spec"}
@@ -28,7 +30,7 @@ def test_argo_workflow_reconstruction(successful_workflow):
         "generateName": "rocrate-test-",
         "annotations": {
             "dummy/author_names": "Lena Creator",
-            "dummy/author_ids": "0000-0002-1825-0097",
+            "dummy/author_ids": "https://orcid.org/0000-0002-1825-0097",
             "dummy/keywords": "RO-Crate, test, workflow",
             "dummy/license": "CC-BY-4.0",
             "workflows.argoproj.io/description": "A small workflow used to test RO-Crate generation",

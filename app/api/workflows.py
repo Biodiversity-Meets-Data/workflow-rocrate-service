@@ -67,7 +67,7 @@ def get_workflow(
     token: str = Depends(check_auth),
 ):
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
-    wfl = reconstruct_workflow(wfl, wfl_engine.annotations_prefix)
+    wfl = reconstruct_workflow(wfl, wfl_engine)
     wfl = yaml.safe_dump(wfl, sort_keys=False)
 
     return Response(
@@ -198,7 +198,7 @@ def get_rocrate(
         content=rocrate.stream_zip(),
         media_type="application/zip",
         headers={
-            "Content-Disposition": f"attachment; filename={engine}_{workflow_id}.zip"
+            "Content-Disposition": f"attachment; filename={wfl_engine}_{workflow_id}.zip"
         },
     )
 
@@ -214,7 +214,7 @@ def get_workflow_run(
 ):
 
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
-    workflow_run = reconstruct_workflow_run(wfl)
+    workflow_run = reconstruct_workflow_run(wfl, wfl_engine)
 
     if not workflow_run:
         return Response(
