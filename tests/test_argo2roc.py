@@ -34,10 +34,10 @@ def test_generate_WRROC_from_workflow(successful_workflow):
 
 
 def test_generate_WROC_from_workflow_multiple_authors(successful_workflow):
-    annotations = successful_workflow.metadata["annotations"]
+    annotations = successful_workflow.metadata.annotations
     annotations["dummy/author_names"] = "Lena Creator, Another Author"
     annotations["dummy/author_ids"] = "0000-0002-1825-0097, 0000-0012-3456-7890"
-    successful_workflow.metadata["annotations"] = annotations
+    successful_workflow.metadata.annotations = annotations
 
     crate = generate_WROC_from_workflow(
         successful_workflow,

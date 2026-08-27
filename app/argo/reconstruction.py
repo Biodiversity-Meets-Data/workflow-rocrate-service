@@ -17,15 +17,15 @@ def reconstruct_workflow(wfl: Workflow, annotations_prefix: str) -> dict[str, An
         "workflows.argoproj.io/title",
     ]
     annotations = {
-        key: wfl.metadata["annotations"][key]
+        key: wfl.metadata.annotations[key]
         for key in annotation_keys_to_keep
-        if key in wfl.metadata.get("annotations", {})
+        if key in wfl.metadata.annotations
     }
 
     metadata = {}
 
-    if "generateName" in wfl.metadata:
-        metadata["generateName"] = wfl.metadata["generateName"]
+    if wfl.metadata.generateName is not None:
+        metadata["generateName"] = wfl.metadata.generateName
     if annotations not in (None, {}):
         metadata["annotations"] = annotations
 

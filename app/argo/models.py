@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -60,8 +61,16 @@ class WorkflowSpec(BaseModel):
     workflowTemplateRef: dict | None = None
 
 
+class WorkflowMetadata(BaseModel):
+    name: str | None = None
+    generateName: str | None = None
+    annotations: dict[str, str]
+    labels: dict
+    creationTimestamp: datetime | None = None
+
+
 class Workflow(BaseModel):
-    metadata: dict
+    metadata: WorkflowMetadata
     spec: WorkflowSpec
     status: WorkflowStatus | None = None
 

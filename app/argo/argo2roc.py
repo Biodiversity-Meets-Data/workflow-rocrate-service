@@ -67,7 +67,7 @@ def generate_WRROC_from_workflow(
 
 
 def _add_workflow_run_file(wfl: WorkflowRun, crate: ROCrate, base_url: str):
-    workflow_id = wfl.metadata["name"]
+    workflow_id = wfl.metadata.name
     create_action = cast(ContextEntity, crate.get_by_type("CreateAction")[0])
 
     # Add the workflow-run.yaml file to the RO-Crate
@@ -111,8 +111,8 @@ def _add_conforms_to(crate: ROCrate, profile_identifiers: list[str]):
 
 
 def _add_date_published(wfl: Workflow, crate: ROCrate):
-    if wfl.metadata.get("creationTimestamp"):
-        dt = datetime.fromisoformat(wfl.metadata["creationTimestamp"])
+    if wfl.metadata.creationTimestamp:
+        dt = wfl.metadata.creationTimestamp
 
     else:
         dt = datetime.now(UTC)
@@ -120,7 +120,7 @@ def _add_date_published(wfl: Workflow, crate: ROCrate):
 
 
 def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
-    workflow_annotations = wfl.metadata["annotations"]
+    workflow_annotations = wfl.metadata.annotations
 
     required_fields = [
         f"{prefix}/author_names",
@@ -176,7 +176,7 @@ def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
         crate,
         identifier="#workflow-agent",
         properties={
-            "name": wfl.metadata["labels"][f"{LABEL_PREFIX}/creator"],
+            "name": wfl.metadata.labels[f"{LABEL_PREFIX}/creator"],
         },
     )
     crate.add(agent)
@@ -193,7 +193,7 @@ def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
         crate.add(
             ContextEntity(
                 crate,
-                identifier=f"#{wfl.metadata['name']}-create-action",
+                identifier=f"#{wfl.metadata.name}-create-action",
                 properties={
                     "@type": "CreateAction",
                     "object": [
@@ -216,7 +216,7 @@ def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
 def _add_workflow_definition_files(
     wfl: Workflow, crate: ROCrate, base_url: str
 ) -> File:
-    workflow_id = wfl.metadata["name"]
+    workflow_id = wfl.metadata.name
 
     # Add the Argo workflow language context entity to the RO-Crate
     crate.add(
