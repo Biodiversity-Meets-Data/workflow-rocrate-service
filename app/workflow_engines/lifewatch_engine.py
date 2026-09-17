@@ -1,6 +1,15 @@
-import requests
+import json
 
-from app.exceptions import AuthenticationError
+import jwt
+import requests
+from jwt import PyJWKClient
+
+from app.argo.models import Workflow
+from app.exceptions import (
+    AuthenticationError,
+    WorkflowNotFoundError,
+    WorkflowParsingError,
+)
 from app.workflow_engines.base import WorkflowEngine
 
 
@@ -23,8 +32,19 @@ class LifeWatchEngine(WorkflowEngine):
         )
 
     def authenticate(self, token: str) -> None:
-        if token != "correct-token":
-            raise AuthenticationError("Invalid token for LifeWatchEngine")
+        try:
+            signing_key = self.jwks_client.get_signing_key_from_jwt(token)
+
+            jwt.decode(
+                token,
+                signing_key.key,
+                algorithms=["RS256"],
+                issuer=self.keycloak_issuer,
+                audience="account",
+            )
+
+        except jwt.PyJWTError as e:
+            raise AuthenticationError("Invalid LifeWatch access token") from e
 
     def get_workflow(self, workflow_id: str, token: str) -> dict:
 
