@@ -4,6 +4,7 @@ import pytest
 
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.argo.models import Author
+from app.settings import dummy_engine_settings
 from app.workflow_engines.dummy_engine import DummyEngine
 
 
@@ -12,7 +13,11 @@ def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
 
-    engine = DummyEngine()
+    engine = DummyEngine(
+        annotations_prefix=dummy_engine_settings.annotations_prefix,
+        labels_prefix=dummy_engine_settings.labels_prefix,
+        base_url=dummy_engine_settings.base_url,
+    )
     return engine.parse_workflow(wfl)
 
 

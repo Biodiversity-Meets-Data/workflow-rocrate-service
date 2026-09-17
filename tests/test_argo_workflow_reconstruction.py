@@ -3,6 +3,7 @@ import json
 import pytest
 
 from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
+from app.settings import dummy_engine_settings
 from app.workflow_engines.dummy_engine import DummyEngine
 
 
@@ -11,13 +12,22 @@ def successful_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
 
-    engine = DummyEngine()
+    engine = DummyEngine(
+        annotations_prefix=dummy_engine_settings.annotations_prefix,
+        labels_prefix=dummy_engine_settings.labels_prefix,
+        base_url=dummy_engine_settings.base_url,
+    )
     return engine.parse_workflow(wfl)
 
 
 def test_argo_workflow_reconstruction(successful_workflow):
     reconstructed_workflow = reconstruct_workflow(
-        successful_workflow, engine=DummyEngine()
+        successful_workflow,
+        engine=DummyEngine(
+            annotations_prefix=dummy_engine_settings.annotations_prefix,
+            labels_prefix=dummy_engine_settings.labels_prefix,
+            base_url=dummy_engine_settings.base_url,
+        ),
     )
 
     assert reconstructed_workflow.keys() == {"kind", "metadata", "spec"}

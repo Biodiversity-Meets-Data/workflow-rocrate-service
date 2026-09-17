@@ -5,9 +5,11 @@ from app.workflow_engines.base import WorkflowEngine
 
 
 class DummyEngine(WorkflowEngine):
-    name: str = "dummy"
-    annotations_prefix: str = "dummy"
-    base_url: str = f"http://localhost:8000/workflow-engines/{name}/workflows"
+    def __init__(self, *, annotations_prefix: str, labels_prefix: str, base_url: str):
+        self.name = "dummy"
+        self.annotations_prefix = annotations_prefix
+        self.labels_prefix = labels_prefix
+        self.base_url = base_url
 
     def authenticate(self, token: str) -> None:
         return  # No authentication needed for the dummy engine

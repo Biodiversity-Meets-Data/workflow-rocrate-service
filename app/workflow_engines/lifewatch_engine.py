@@ -5,10 +5,22 @@ from app.workflow_engines.base import WorkflowEngine
 
 
 class LifeWatchEngine(WorkflowEngine):
-    name: str = "lifewatch"
-    annotations_prefix: str = "lifewatch"
-    labels_prefix: str = "workflows.lifewatch.eu"
-    base_url: str = "https://workflows-demo.bmd.lifewatch.dev/v1"
+    def __init__(
+        self,
+        *,
+        keycloak_issuer: str,
+        base_url: str,
+        annotations_prefix: str,
+        labels_prefix: str,
+    ):
+        self.name = "lifewatch"
+        self.keycloak_issuer = keycloak_issuer
+        self.base_url = base_url
+        self.annotations_prefix = annotations_prefix
+        self.labels_prefix = labels_prefix
+        self.jwks_client = PyJWKClient(
+            f"{self.keycloak_issuer}/protocol/openid-connect/certs"
+        )
 
     def authenticate(self, token: str) -> None:
         if token != "correct-token":
