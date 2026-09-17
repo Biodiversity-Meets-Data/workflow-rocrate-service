@@ -46,16 +46,55 @@ class LifeWatchEngine(WorkflowEngine):
         except jwt.PyJWTError as e:
             raise AuthenticationError("Invalid LifeWatch access token") from e
 
-    def get_workflow(self, workflow_id: str, token: str) -> dict:
+    def get_workflow(self, workflow_id: str, token: str) -> Workflow:
 
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {token}", "accept": "application/json"}
 
         response = requests.get(
             f"{self.base_url}/{workflow_id}/status", headers=headers
         )
+        if response.status_code == 404:
+            raise WorkflowNotFoundError(f"Workflow with ID {workflow_id} not found")
         response.raise_for_status()
+        try:
+            wfl = self.parse_workflow(response.json())
+        except KeyError as e:
+            raise WorkflowParsingError(
+                f"Failed to parse workflow with ID {workflow_id}, missing key: {e.args[0]}"
+            ) from e
 
-        return response.json()
+        return wfl
 
-    def post_workflow(self, workflow_data: dict, token: str):
-        pass
+    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+
+        if not workflow.spec.arguments or not workflow.spec.arguments.parameters:
+            parameters = []
+        else:
+            parameters = [
+                param.model_dump() for param in workflow.spec.arguments.parameters
+            ]
+
+        workflow_template_ref = workflow.spec.workflowTemplateRef
+        if not workflow_template_ref:
+            raise WorkflowParsingError(
+                "Failed to submit workflow to LifeWatch, workflow template reference is required"
+            )
+
+        payload = {
+            "parameters": parameters,
+            "workflow_template_ref": {"name": "bmd-terrestrial-sdm"},
+        }
+
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        response = requests.post(
+            self.base_url + "/submit/from_template",
+            headers=headers,
+            data=json.dumps(payload),
+        )
+        response.raise_for_status()
+        workflow_id = response.json().get("name")
+        return workflow_id

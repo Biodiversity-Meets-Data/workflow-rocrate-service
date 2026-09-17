@@ -18,7 +18,7 @@ class WorkflowEngine(ABC):
         pass
 
     @abstractmethod
-    def post_workflow(self, workflow_data: dict, token: str) -> Workflow:
+    def submit_workflow(self, workflow: Workflow, token: str) -> str:
         pass
 
     def parse_workflow(self, data: dict) -> Workflow:

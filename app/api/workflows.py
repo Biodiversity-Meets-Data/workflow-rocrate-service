@@ -1,3 +1,4 @@
+import json
 from typing import Annotated, Literal
 
 import yaml
@@ -20,8 +21,10 @@ from app.argo.reconstruction import (
     reconstruct_workflow,
     reconstruct_workflow_run,
 )
+from app.argo.roc2argo import generate_workflow_from_rocrate
 from app.config import settings
 from app.exceptions import AuthenticationError
+from app.rocrate_io import get_crate_workflow_from_zip
 from app.workflow_engines.base import WorkflowEngine
 
 router = APIRouter(prefix="/workflow-engines/{engine}/workflows", tags=["workflows"])
@@ -236,7 +239,7 @@ def get_workflow_run(
     "",
     description="This is a placeholder endpoint for workflow submission. It is not implemented yet.",
 )
-def submit_workflow(
+async def submit_workflow(
     engine: str,
     rocrate_file: Annotated[
         UploadFile,
@@ -252,12 +255,15 @@ def submit_workflow(
     wfl_engine: WorkflowEngine = Depends(get_engine),
     token: str = Depends(check_auth),
 ):
-    if rocrate_file.content_type not in ["application/zip", "application/octet-stream"]:
-        raise HTTPException(
-            status_code=400,
-            detail="File is not a zip file",
-        )
-    raise HTTPException(
-        status_code=501,
-        detail="Workflow submission is not implemented yet.",
+
+    crate, workflow = await get_crate_workflow_from_zip(rocrate_file)
+    try:
+        wfl = generate_workflow_from_rocrate(crate, workflow, wfl_engine)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    workflow_id = wfl_engine.submit_workflow(wfl, token=token)
+    return Response(
+        content=json.dumps({"workflow_id": workflow_id}),
+        media_type="application/json",
     )

@@ -19,5 +19,5 @@ class DummyEngine(WorkflowEngine):
             workflow = json.load(f)
         return self.parse_workflow(workflow)
 
-    def post_workflow(self, workflow_data: dict, token: str):
-        pass
+    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+        return "dummy_workflow_id"
