@@ -4,11 +4,12 @@ from pydantic import BaseModel
 from rocrate.rocrate import ROCrate
 
 from app.argo.models import Annotations, Author, Workflow, WorkflowMetadata
-from app.workflow_engines.base import WorkflowEngine
 
 
 def generate_workflow_from_rocrate(
-    crate: ROCrate, workflow: dict, engine: WorkflowEngine
+    crate: ROCrate,
+    workflow: dict,
+    workflow_parameters: dict,
 ) -> Workflow:
 
     annotations = (
@@ -20,11 +21,37 @@ def generate_workflow_from_rocrate(
     annotations = _update_annotations(crate)
     metadata = WorkflowMetadata(annotations=annotations, labels={})
 
+    spec = workflow["spec"]
+
+    params = _update_parameters(workflow_parameters, spec["arguments"]["parameters"])
+    spec["arguments"]["parameters"] = params
+
     return Workflow(
         kind="Workflow",
         metadata=metadata,
-        spec=workflow["spec"],
+        spec=spec,
     )
+
+
+def _update_parameters(params_in: dict, params: list[dict]) -> list[dict]:
+    """
+    args:
+        params_in: dict
+            The new workflow parameters to be added.
+        params: list
+            The existing workflow parameters in the workflow spec.
+    """
+
+    for name, value in params_in.items():
+        if name not in [param["name"] for param in params]:
+            print(f"Parameter '{name}' not a recognized parameter.")
+        else:
+            for param in params:
+                if param["name"] == name:
+                    param["value"] = value
+                    break
+
+    return params
 
 
 def _update_annotations(crate: ROCrate) -> Annotations:
@@ -54,17 +81,17 @@ def _update_annotations(crate: ROCrate) -> Annotations:
 
 
 def _get_authors(crate: ROCrate) -> list[Author]:
-    if isinstance(crate.root_dataset["author"], str):
-        author = crate.get(crate.root_dataset["author"])
-        if author is None:
-            raise ValueError("Author not found in the RO-Crate.")
-        return [Author(name=author["name"], id=author["@id"])]
 
-    elif isinstance(crate.root_dataset["author"], list):
+    if isinstance(crate.root_dataset["author"], list):
         authors = []
         for author in crate.root_dataset["author"]:
             author = cast(dict, author)
             authors.append(Author(name=author["name"], id=author["@id"]))
         return authors
 
-    raise ValueError("Author not found in the RO-Crate.")
+    else:
+        author = crate.root_dataset["author"]
+        if author is None:
+            raise ValueError("Author not found in the RO-Crate.")
+        author = cast(dict, author)
+        return [Author(name=author["name"], id=author["@id"])]

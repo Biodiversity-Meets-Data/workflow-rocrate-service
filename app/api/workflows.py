@@ -245,20 +245,26 @@ async def submit_workflow(
         UploadFile,
         File(description="Workflow RO-Crate .zip file containing the workflow"),
     ],
-    model_parameters: Annotated[
+    workflow_parameters: Annotated[
         str,
         Form(
-            description="Model parameters for the workflow",
+            description="Workflow parameters for the workflow",
             examples=[{"param1": "value1", "param2": "value2"}],
         ),
     ],
     wfl_engine: WorkflowEngine = Depends(get_engine),
     token: str = Depends(check_auth),
 ):
+    parameters = json.loads(workflow_parameters)
 
+    if not isinstance(parameters, dict):
+        raise HTTPException(
+            status_code=422,
+            detail="workflow_parameters must be a JSON object",
+        )
     crate, workflow = await get_crate_workflow_from_zip(rocrate_file)
     try:
-        wfl = generate_workflow_from_rocrate(crate, workflow, wfl_engine)
+        wfl = generate_workflow_from_rocrate(crate, workflow, parameters)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

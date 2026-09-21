@@ -47,7 +47,7 @@ class WorkflowStatus(BaseModel):
 
 class Parameter(BaseModel):
     name: str
-    value: str | None = None
+    value: str
     description: str | None = None
     default: str | None = None
 
