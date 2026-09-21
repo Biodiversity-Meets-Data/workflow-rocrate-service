@@ -9,6 +9,8 @@ class ArgoBaseModel(BaseModel):
     model_config = ConfigDict(
         alias_generator=to_snake,
         serialize_by_alias=True,
+        validate_by_alias=True,
+        validate_by_name=True,
     )
 
 
@@ -67,6 +69,8 @@ class Arguments(ArgoBaseModel):
 class WorkflowSpec(ArgoBaseModel):
     arguments: Arguments | None = None
     workflowTemplateRef: dict | None = None
+    entrypoint: str | None = None
+    templates: list[dict] | None = None
 
 
 class Author(ArgoBaseModel):

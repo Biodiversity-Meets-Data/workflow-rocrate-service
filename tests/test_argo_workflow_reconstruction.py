@@ -48,7 +48,9 @@ def test_argo_workflow_reconstruction(successful_workflow):
         },
     }
 
-    assert reconstructed_workflow["spec"] == successful_workflow.spec.model_dump()
+    assert reconstructed_workflow["spec"] == successful_workflow.spec.model_dump(
+        by_alias=False, exclude_unset=True
+    )
 
 
 def test_argo_template_reconstruction(successful_workflow):

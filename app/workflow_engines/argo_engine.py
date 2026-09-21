@@ -1,6 +1,10 @@
+from typing import cast
+
 from hera.exceptions import NotFound as HeraNotFoundException
 from hera.exceptions import Unauthorized
+from hera.workflows import Workflow as HeraWorkflow
 from hera.workflows import WorkflowsService
+from hera.workflows.models import WorkflowCreateRequest
 from pydantic import ValidationError
 from requests.exceptions import ConnectionError
 
@@ -36,9 +40,9 @@ class ArgoWorkflowEngine(WorkflowEngine):
         self.argo_host = argo_host
         self.argo_namespace = argo_namespace
         self.workflows_service = WorkflowsService(
-            host=argo_host,
-            namespace=argo_namespace,
-            token=argo_token,
+            host=self.argo_host,
+            namespace=self.argo_namespace,
+            token=self.argo_token,
         )
 
     def authenticate(self, token: str) -> None:
@@ -78,4 +82,18 @@ class ArgoWorkflowEngine(WorkflowEngine):
         return wfl
 
     def submit_workflow(self, workflow: Workflow, token: str) -> str:
-        return "dummy_workflow_id"
+        health = self.health_check()
+        if not health:
+            raise UpstreamWorkflowEngineError(
+                f"{self.name} workflow engine is not healthy, cannot submit workflow"
+            )
+
+        wfl_dict = self.serialize_workflow(workflow, snake_case=True)
+
+        hera_workflow = cast(HeraWorkflow, HeraWorkflow.from_dict(wfl_dict))
+
+        created_wfl = self.workflows_service.create_workflow(
+            WorkflowCreateRequest(workflow=hera_workflow.build()),  # type: ignore
+            namespace=self.argo_namespace,
+        )
+        return created_wfl.metadata.name  # type: ignore

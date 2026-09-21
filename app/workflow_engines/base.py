@@ -57,10 +57,11 @@ class WorkflowEngine(ABC):
 
         return Workflow.model_validate(data, by_name=True)
 
-    def serialize_workflow(self, workflow: Workflow) -> dict:
+    def serialize_workflow(self, workflow: Workflow, snake_case: bool = False) -> dict:
 
         data = workflow.model_dump(
             exclude_none=True,
+            by_alias=snake_case,
         )
 
         annotations = data["metadata"]["annotations"]

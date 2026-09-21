@@ -19,7 +19,12 @@ def generate_workflow_from_rocrate(
     )
 
     annotations = _update_annotations(crate)
-    metadata = WorkflowMetadata(annotations=annotations, labels={})
+
+    metadata = WorkflowMetadata(
+        annotations=annotations,
+        labels={},
+        generateName=workflow["metadata"].get("generateName", None),
+    )
 
     spec = workflow["spec"]
 
