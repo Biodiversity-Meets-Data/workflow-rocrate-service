@@ -46,6 +46,9 @@ class LifeWatchEngine(WorkflowEngine):
         except jwt.PyJWTError as e:
             raise AuthenticationError("Invalid LifeWatch access token") from e
 
+    def health_check(self):
+        pass
+
     def get_workflow(self, workflow_id: str, token: str) -> Workflow:
 
         headers = {"Authorization": f"Bearer {token}", "accept": "application/json"}

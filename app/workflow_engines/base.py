@@ -14,6 +14,10 @@ class WorkflowEngine(ABC):
         pass
 
     @abstractmethod
+    def health_check(self) -> bool:
+        pass
+
+    @abstractmethod
     def get_workflow(self, workflow_id: str, **kwargs) -> Workflow:
         pass
 

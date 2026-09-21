@@ -14,6 +14,9 @@ class DummyEngine(WorkflowEngine):
     def authenticate(self, token: str) -> None:
         return  # No authentication needed for the dummy engine
 
+    def health_check(self) -> bool:
+        return True
+
     def get_workflow(self, workflow_id: str, token: str) -> Workflow:
         with open("tests/fixtures/successful_workflow.json") as f:
             workflow = json.load(f)
