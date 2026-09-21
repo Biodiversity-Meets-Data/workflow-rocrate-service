@@ -116,7 +116,7 @@ def _add_date_published(wfl: Workflow, crate: ROCrate):
 
     else:
         dt = datetime.now(UTC)
-    crate.root_dataset["datePublished"] = dt.isoformat()
+    crate.root_dataset["datePublished"] = dt.isoformat(timespec="seconds")
 
 
 def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
@@ -174,8 +174,10 @@ def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
                     ],
                     "instrument": {"@id": wfl_object["@id"]},
                     "agent": {"@id": agent["@id"]},
-                    "startTime": wfl.status.startedAt,
-                    "endTime": wfl.status.finishedAt,
+                    "startTime": wfl.status.startedAt.isoformat(timespec="seconds"),
+                    "endTime": wfl.status.finishedAt.isoformat(timespec="seconds")
+                    if wfl.status.finishedAt
+                    else None,
                     "actionStatus": {"@id": actionStatus},
                 },
             )

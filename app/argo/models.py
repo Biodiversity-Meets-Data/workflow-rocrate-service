@@ -1,72 +1,80 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_snake
 
 
-class ArtifactS3(BaseModel):
+class ArgoBaseModel(BaseModel):
+    model_config = ConfigDict(
+        alias_generator=to_snake,
+        serialize_by_alias=True,
+    )
+
+
+class ArtifactS3(ArgoBaseModel):
     key: str
 
 
-class Artifact(BaseModel):
+class Artifact(ArgoBaseModel):
     name: str
     path: str | None = None
     s3: ArtifactS3
 
 
-class NodeOutputs(BaseModel):
+class NodeOutputs(ArgoBaseModel):
     artifacts: list[Artifact]
 
 
-class Node(BaseModel):
+class Node(ArgoBaseModel):
     name: str
     outputs: NodeOutputs | None = None
 
 
-class ArtifactRepositoryS3(BaseModel):
+class ArtifactRepositoryS3(ArgoBaseModel):
     bucket: str
     endpoint: str
 
 
-class ArtifactRepository(BaseModel):
+class ArtifactRepository(ArgoBaseModel):
     s3: ArtifactRepositoryS3
 
 
-class ArtifactRepositoryRef(BaseModel):
+class ArtifactRepositoryRef(ArgoBaseModel):
     artifactRepository: ArtifactRepository
 
 
-class WorkflowStatus(BaseModel):
+class WorkflowStatus(ArgoBaseModel):
     nodes: dict[str, Node]
     phase: Literal["Pending", "Running", "Succeeded", "Failed", "Error"]
     artifactRepositoryRef: ArtifactRepositoryRef
-    startedAt: str
-    finishedAt: str
+    startedAt: datetime
+    finishedAt: datetime | None = None
     storedWorkflowTemplateSpec: dict | None = None
 
 
-class Parameter(BaseModel):
+class Parameter(ArgoBaseModel):
     name: str
     value: str
     description: str | None = None
     default: str | None = None
 
 
-class Arguments(BaseModel):
+class Arguments(ArgoBaseModel):
     parameters: list[Parameter] | None = None
 
 
-class WorkflowSpec(BaseModel):
+class WorkflowSpec(ArgoBaseModel):
     arguments: Arguments | None = None
     workflowTemplateRef: dict | None = None
 
 
-class Author(BaseModel):
+class Author(ArgoBaseModel):
     name: str
     id: str
 
 
-class Annotations(BaseModel):
+class Annotations(ArgoBaseModel):
     authors: list[Author]
     license: str
     keywords: list[str]
@@ -74,7 +82,7 @@ class Annotations(BaseModel):
     title: str
 
 
-class WorkflowMetadata(BaseModel):
+class WorkflowMetadata(ArgoBaseModel):
     name: str | None = None
     generateName: str | None = None
     annotations: Annotations
@@ -82,7 +90,7 @@ class WorkflowMetadata(BaseModel):
     creationTimestamp: datetime | None = None
 
 
-class Workflow(BaseModel):
+class Workflow(ArgoBaseModel):
     kind: Literal["Workflow", "WorkflowTemplate"] = "Workflow"
     metadata: WorkflowMetadata
     spec: WorkflowSpec

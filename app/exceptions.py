@@ -8,3 +8,7 @@ class WorkflowNotFoundError(Exception):
 
 class WorkflowParsingError(Exception):
     """Custom exception for workflow parsing errors."""
+
+
+class UpstreamWorkflowEngineError(Exception):
+    """Custom exception for upstream workflow engine errors."""

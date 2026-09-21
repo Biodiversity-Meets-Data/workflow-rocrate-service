@@ -14,7 +14,7 @@ class WorkflowEngine(ABC):
         pass
 
     @abstractmethod
-    def get_workflow(self, workflow_id: str, token: str) -> Workflow:
+    def get_workflow(self, workflow_id: str, **kwargs) -> Workflow:
         pass
 
     @abstractmethod
@@ -51,7 +51,7 @@ class WorkflowEngine(ABC):
         data = data.copy()
         data["metadata"] = metadata
 
-        return Workflow.model_validate(data)
+        return Workflow.model_validate(data, by_name=True)
 
     def serialize_workflow(self, workflow: Workflow) -> dict:
 

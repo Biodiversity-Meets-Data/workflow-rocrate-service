@@ -2,7 +2,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.api.workflows import router as workflows_router
-from app.exceptions import WorkflowNotFoundError, WorkflowParsingError
+from app.exceptions import (
+    UpstreamWorkflowEngineError,
+    WorkflowNotFoundError,
+    WorkflowParsingError,
+)
 
 app = FastAPI()
 
@@ -21,6 +25,17 @@ def workflow_parsing_exception_handler(request: Request, exc: WorkflowParsingErr
 
     return JSONResponse(
         status_code=500,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(UpstreamWorkflowEngineError)
+def upstream_workflow_engine_exception_handler(
+    request: Request, exc: UpstreamWorkflowEngineError
+):
+
+    return JSONResponse(
+        status_code=502,
         content={"detail": str(exc)},
     )
 
