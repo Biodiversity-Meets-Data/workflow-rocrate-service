@@ -1,4 +1,6 @@
 import json
+import tempfile
+from pathlib import Path
 from typing import Annotated, Literal
 
 import yaml
@@ -90,7 +92,6 @@ def get_template(
 
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
     template = reconstruct_template(wfl)
-    print(template)
 
     if not template:
         return Response(
@@ -179,19 +180,39 @@ def get_rocrate(
 ):
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
 
+    workflow_yaml = yaml.safe_dump(
+        reconstruct_workflow(wfl, wfl_engine), sort_keys=False
+    )
+    workflow_file = Path(tempfile.mkdtemp()) / "workflow.yaml"
+    workflow_file.write_text(workflow_yaml, encoding="utf-8")
+
+    template_yaml = yaml.safe_dump(reconstruct_template(wfl), sort_keys=False)
+    template_file = Path(tempfile.mkdtemp()) / "template.yaml"
+    template_file.write_text(template_yaml, encoding="utf-8")
+
     try:
         if profile == "WROC":
             rocrate = generate_WROC_from_workflow(
                 wfl,
                 prefix=wfl_engine.annotations_prefix,
                 base_url=wfl_engine.base_url,
+                workflow_file=workflow_file,
+                template_file=template_file,
                 validate=validate_rocrate,
             )
         elif profile == "WRROC":
+            workflow_run_yaml = yaml.safe_dump(
+                reconstruct_workflow_run(wfl, wfl_engine), sort_keys=False
+            )
+            workflow_run_file = Path(tempfile.mkdtemp()) / "workflow-run.yaml"
+            workflow_run_file.write_text(workflow_run_yaml, encoding="utf-8")
             rocrate = generate_WRROC_from_workflow(
                 wfl,
                 prefix=wfl_engine.annotations_prefix,
                 base_url=wfl_engine.base_url,
+                workflow_file=workflow_file,
+                template_file=template_file,
+                workflow_run_file=workflow_run_file,
                 validate=validate_rocrate,
             )
     except ValueError as e:

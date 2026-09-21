@@ -1,5 +1,6 @@
 import os
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import cast
 
 from rocrate.model import ContextEntity, File, Person
@@ -10,12 +11,19 @@ from app.argo.models import Workflow, WorkflowRun, WorkflowStatus
 
 
 def generate_WROC_from_workflow(
-    wfl: Workflow, prefix: str, base_url: str, validate: bool = False
+    wfl: Workflow,
+    prefix: str,
+    base_url: str,
+    workflow_file: Path | None = None,
+    template_file: Path | None = None,
+    validate: bool = False,
 ) -> ROCrate:
     crate = ROCrate()
 
     _add_metadata_from_annotations(wfl, crate, prefix)
-    wfl_object = _add_workflow_definition_files(wfl, crate, base_url)
+    wfl_object = _add_workflow_definition_files(
+        wfl, crate, workflow_file, template_file, base_url
+    )
     _add_workflow_params(wfl, crate, wfl_object)
 
     crate.metadata.profile = "https://w3id.org/ro/crate/1.1"
@@ -31,16 +39,24 @@ def generate_WROC_from_workflow(
 
 
 def generate_WRROC_from_workflow(
-    wfl: Workflow, prefix: str, base_url: str, validate: bool = False
+    wfl: Workflow,
+    prefix: str,
+    base_url: str,
+    workflow_file: Path | None = None,
+    template_file: Path | None = None,
+    workflow_run_file: Path | None = None,
+    validate: bool = False,
 ) -> ROCrate:
     wfl = cast(WorkflowRun, wfl)
     crate = ROCrate()
 
     _add_metadata_from_annotations(wfl, crate, prefix)
-    wfl_object = _add_workflow_definition_files(wfl, crate, base_url)
+    wfl_object = _add_workflow_definition_files(
+        wfl, crate, workflow_file, template_file, base_url
+    )
     _add_workflow_params(wfl, crate, wfl_object, wfl_run=True)
     _add_create_action(wfl, crate, wfl_object)
-    _add_workflow_run_file(wfl, crate, base_url)
+    _add_workflow_run_file(wfl, crate, workflow_run_file, base_url)
     _add_date_published(wfl, crate)
     wfl_status = wfl.status
     _add_artifacts(wfl_status, crate)
@@ -66,7 +82,9 @@ def generate_WRROC_from_workflow(
     return crate
 
 
-def _add_workflow_run_file(wfl: WorkflowRun, crate: ROCrate, base_url: str):
+def _add_workflow_run_file(
+    wfl: WorkflowRun, crate: ROCrate, workflow_run_file: Path | None, base_url: str
+):
     workflow_id = wfl.metadata.name
     create_action = cast(ContextEntity, crate.get_by_type("CreateAction")[0])
 
@@ -74,7 +92,9 @@ def _add_workflow_run_file(wfl: WorkflowRun, crate: ROCrate, base_url: str):
     workflow_run_object = cast(
         File,
         crate.add_file(
-            source=f"{base_url}/{workflow_id}/workflow-run.yaml",
+            source=workflow_run_file
+            if workflow_run_file
+            else f"{base_url}/{workflow_id}/workflow-run.yaml",
             properties={
                 "@type": ["File"],
                 "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
@@ -188,7 +208,11 @@ def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
 
 
 def _add_workflow_definition_files(
-    wfl: Workflow, crate: ROCrate, base_url: str
+    wfl: Workflow,
+    crate: ROCrate,
+    workflow_file: Path | None,
+    template_file: Path | None,
+    base_url: str,
 ) -> File:
     workflow_id = wfl.metadata.name
 
@@ -208,7 +232,9 @@ def _add_workflow_definition_files(
 
     # Add the workflow.yaml file to the RO-Crate
     workflow_object = crate.add_file(
-        source=f"{base_url}/{workflow_id}/workflow.yaml",
+        source=workflow_file
+        if workflow_file
+        else f"{base_url}/{workflow_id}/workflow.yaml",
         properties={
             "@type": ["File", "ComputationalWorkflow", "SoftwareSourceCode"],
             "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
@@ -218,7 +244,9 @@ def _add_workflow_definition_files(
                 {"@id": author["@id"]} for author in crate.get_by_type("Person")
             ],
             "name": "workflow.yaml",
-            "softwareRequirements": {"@id": f"{base_url}/{workflow_id}/template.yaml"},
+            "softwareRequirements": {"@id": "template.yaml"}
+            if template_file
+            else {"@id": f"{base_url}/{workflow_id}/template.yaml"},
         },
     )
 
@@ -229,7 +257,9 @@ def _add_workflow_definition_files(
     # Add the template.yaml file to the RO-Crate if it exists
     if wfl.spec.workflowTemplateRef is not None:
         crate.add_file(
-            source=f"{base_url}/{workflow_id}/template.yaml",
+            source=template_file
+            if template_file
+            else f"{base_url}/{workflow_id}/template.yaml",
             properties={
                 "@type": ["File", "ComputationalWorkflow", "SoftwareSourceCode"],
                 "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
