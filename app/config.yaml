@@ -1,0 +1,42 @@
+app:
+  name: workflow-rocrate-service
+
+deployments:
+  lifewatch:
+    engine: lifewatch
+    base_url: https://workflows-demo.bmd.lifewatch.dev/v1
+    annotations_prefix: lifewatch
+    labels_prefix: workflows.lifewatch.eu
+    keycloak_issuer: https://auth.lifewatch.eu/realms/lifewatcheric
+
+  dummy:
+    engine: dummy
+    base_url: http://localhost:8000/workflow-engines/dummy/workflows
+    annotations_prefix: dummy
+    labels_prefix: workflows.argoproj.io
+
+  local:
+    engine: argo
+    base_url: http://localhost:8000/workflow-engines/local/workflows
+    annotations_prefix: tbd
+    labels_prefix: tbd
+    argo:
+      token: local-argo-token
+      host: http://localhost:2746
+      namespace: argo
+      artifact_access_key: minio-access-key
+      artifact_secret_key: minio-secret-key
+      artifact_endpoint: localhost:9000
+
+  juelich:
+    engine: argo
+    base_url: http://localhost:8000/workflow-engines/juelich/workflows
+    annotations_prefix: juelich
+    labels_prefix: workflows.fz-juelich.de
+    argo:
+      token: juelich-argo-token
+      host: http://localhost:32000
+      namespace: argo
+      artifact_access_key: juelich-artifact-access-key
+      artifact_secret_key: juelich-artifact-secret-key
+      artifact_endpoint: s3.juelich.example.org

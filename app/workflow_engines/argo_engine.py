@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import cast
 
 from hera.exceptions import NotFound as HeraNotFoundException
@@ -17,6 +18,16 @@ from app.exceptions import (
 from app.workflow_engines.base import WorkflowEngine
 
 
+@dataclass(frozen=True)
+class ArgoConnectionConfig:
+    token: str
+    host: str
+    namespace: str
+    artifact_access_key: str
+    artifact_secret_key: str
+    artifact_endpoint: str
+
+
 class ArgoWorkflowEngine(WorkflowEngine):
     """
     This class allows to directly interact with an instance of Argo Workflows.
@@ -28,20 +39,15 @@ class ArgoWorkflowEngine(WorkflowEngine):
         annotations_prefix: str,
         labels_prefix: str,
         base_url: str,
-        argo_token: str,
-        argo_host: str,
-        argo_namespace: str,
-        argo_artifact_access_key: str,
-        argo_artifact_secret_key: str,
-        argo_artifact_endpoint: str,
+        argo: ArgoConnectionConfig,
     ):
         self.name = "argo"
         self.annotations_prefix = annotations_prefix
         self.labels_prefix = labels_prefix
         self.base_url = base_url
-        self.argo_token = argo_token
-        self.argo_host = argo_host
-        self.argo_namespace = argo_namespace
+        self.argo_token = argo.token
+        self.argo_host = argo.host
+        self.argo_namespace = argo.namespace
         self.workflows_service = WorkflowsService(
             host=self.argo_host,
             namespace=self.argo_namespace,

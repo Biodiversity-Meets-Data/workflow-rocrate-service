@@ -4,8 +4,10 @@ import pytest
 
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.argo.models import Author
-from app.settings import dummy_engine_settings
+from app.settings import get_dummy_deployment
 from app.workflow_engines.dummy_engine import DummyEngine
+
+dummy_engine_settings = get_dummy_deployment()
 
 
 @pytest.fixture

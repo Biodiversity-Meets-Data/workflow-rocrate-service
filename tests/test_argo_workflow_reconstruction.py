@@ -3,8 +3,10 @@ import json
 import pytest
 
 from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
-from app.settings import dummy_engine_settings
+from app.settings import get_dummy_deployment
 from app.workflow_engines.dummy_engine import DummyEngine
+
+dummy_engine_settings = get_dummy_deployment()
 
 
 @pytest.fixture

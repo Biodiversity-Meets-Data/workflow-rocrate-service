@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from app.config import settings
 from app.exceptions import AuthenticationError
+from app.settings import settings
 from app.workflow_engines.base import WorkflowEngine
 
 

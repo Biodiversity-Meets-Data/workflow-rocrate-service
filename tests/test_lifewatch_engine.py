@@ -1,8 +1,10 @@
 import json
 from unittest.mock import Mock, patch
 
-from app.settings import lifewatch_engine_settings
+from app.settings import get_lifewatch_deployment
 from app.workflow_engines.lifewatch_engine import LifeWatchEngine
+
+lifewatch_engine_settings = get_lifewatch_deployment()
 
 
 def test_get_workflow():
