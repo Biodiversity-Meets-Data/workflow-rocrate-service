@@ -15,8 +15,8 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import StreamingResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.api.dependencies import check_auth, get_engine
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.argo.reconstruction import (
     reconstruct_template,
@@ -24,44 +24,10 @@ from app.argo.reconstruction import (
     reconstruct_workflow_run,
 )
 from app.argo.roc2argo import generate_workflow_from_rocrate
-from app.config import settings
-from app.exceptions import AuthenticationError
 from app.rocrate_io import get_crate_workflow_from_zip
 from app.workflow_engines.base import WorkflowEngine
 
 router = APIRouter(prefix="/workflow-engines/{engine}/workflows", tags=["workflows"])
-
-
-def get_engine(engine: str) -> WorkflowEngine:
-    try:
-        wfl_engine = settings.engines[engine]
-    except KeyError:
-        raise HTTPException(
-            detail=f"Unknown workflow engine: {engine}",
-            status_code=404,
-        )
-    return wfl_engine
-
-
-bearer_scheme = HTTPBearer()
-
-
-def check_auth(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials,
-        Depends(bearer_scheme),
-    ],
-    wfl_engine: WorkflowEngine = Depends(get_engine),
-) -> str:
-    try:
-        wfl_engine.authenticate(token=credentials.credentials)
-    except AuthenticationError as e:
-        print(f"Authentication failed: {e}")
-        raise HTTPException(
-            status_code=401,
-            detail=str(e),
-        )
-    return credentials.credentials
 
 
 @router.get("/{workflow_id}/workflow.yaml")

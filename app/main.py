@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.api.artifacts import router as artifacts_router
 from app.api.workflows import router as workflows_router
 from app.exceptions import (
     UpstreamWorkflowEngineError,
@@ -41,3 +42,4 @@ def upstream_workflow_engine_exception_handler(
 
 
 app.include_router(workflows_router)
+app.include_router(artifacts_router)
