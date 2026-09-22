@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import cast
 
+import boto3
 from hera.exceptions import NotFound as HeraNotFoundException
 from hera.exceptions import Unauthorized
 from hera.workflows import Workflow as HeraWorkflow
@@ -53,9 +54,13 @@ class ArgoWorkflowEngine(WorkflowEngine):
             namespace=self.argo_namespace,
             token=self.argo_token,
         )
-        self.argo_artifact_access_key = argo_artifact_access_key
-        self.argo_artifact_secret_key = argo_artifact_secret_key
-        self.argo_artifact_endpoint = argo_artifact_endpoint
+
+        self.s3_client = boto3.client(
+            "s3",
+            endpoint_url=f"http://{argo.artifact_endpoint}",
+            aws_access_key_id=argo.artifact_access_key,
+            aws_secret_access_key=argo.artifact_secret_key,
+        )
 
     def authenticate(self, token: str) -> None:
         return  # No authentication implemented for the argo engine
@@ -110,23 +115,9 @@ class ArgoWorkflowEngine(WorkflowEngine):
         )
         return created_wfl.metadata.name  # type: ignore
 
-    def get_artifact_download_url(self, artifact_key: str):
-        health = self.health_check()
-        if not health:
-            raise UpstreamWorkflowEngineError(
-                f"{self.name} workflow engine is not healthy, cannot retrieve artifact"
-            )
-        from minio import Minio
+    def get_artifact_download_url(self, bucket: str, artifact_key: str) -> str:
 
-        client = Minio(
-            endpoint=self.argo_artifact_endpoint,
-            access_key=self.argo_artifact_access_key,
-            secret_key=self.argo_artifact_secret_key,
-            secure=False,
+        return self.s3_client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": artifact_key},
         )
-
-        url = client.presigned_get_object(
-            "my-bucket",
-            artifact_key,
-        )
-        return url

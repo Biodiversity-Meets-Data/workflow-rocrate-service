@@ -319,6 +319,7 @@ def _add_workflow_params(
 def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate, base_url: str) -> None:
 
     artifact_url = base_url.rsplit("/", 1)[0]
+    bucket_name = wfl_status.artifactRepositoryRef.artifactRepository.s3.bucket
 
     create_action_object = crate.get_by_type("CreateAction")[0]
     for node_name, node in wfl_status.nodes.items():
@@ -328,7 +329,7 @@ def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate, base_url: str) ->
         for artifact in node.outputs.artifacts:
             if artifact.name == "main-logs":
                 artifact_file = crate.add_file(
-                    source=f"{artifact_url}/artifacts/{artifact.s3.key}",
+                    source=f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}",
                     properties={
                         "name": "main.log",
                         "description": f"Main logs from node {node_name}",
@@ -337,7 +338,7 @@ def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate, base_url: str) ->
                 )
             else:
                 artifact_file = crate.add_file(
-                    source=f"{artifact_url}/artifacts/{artifact.s3.key}",
+                    source=f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}",
                     properties={
                         "name": os.path.basename(artifact.s3.key),
                         "description": f"Artifact {artifact.name} from node {node_name}",
