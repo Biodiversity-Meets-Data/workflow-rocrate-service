@@ -12,18 +12,15 @@ def generate_workflow_from_rocrate(
     workflow_parameters: dict,
 ) -> Workflow:
 
-    annotations = (
-        workflow["metadata"]["annotations"]
-        if "metadata" in workflow and "annotations" in workflow["metadata"]
-        else {}
-    )
+    metadata = workflow.get("metadata", {})
+    annotations = metadata.get("annotations", {})
 
     annotations = _update_annotations(crate)
 
     metadata = WorkflowMetadata(
         annotations=annotations,
         labels={},
-        generateName=workflow["metadata"].get("generateName", None),
+        generateName=metadata.get("generateName", None),
     )
 
     spec = workflow["spec"]

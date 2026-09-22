@@ -108,11 +108,13 @@ class ArgoWorkflowEngine(WorkflowEngine):
         wfl_dict = self.serialize_workflow(workflow, snake_case=True)
 
         hera_workflow = cast(HeraWorkflow, HeraWorkflow.from_dict(wfl_dict))
-
-        created_wfl = self.workflows_service.create_workflow(
-            WorkflowCreateRequest(workflow=hera_workflow.build()),  # type: ignore
-            namespace=self.argo_namespace,
-        )
+        try:
+            created_wfl = self.workflows_service.create_workflow(
+                WorkflowCreateRequest(workflow=hera_workflow.build()),  # type: ignore
+                namespace=self.argo_namespace,
+            )
+        except HeraNotFoundException as e:
+            raise WorkflowNotFoundError(f"Failed to create workflow, {e!s}")
         return created_wfl.metadata.name  # type: ignore
 
     def get_artifact_download_url(self, bucket: str, artifact_key: str) -> str:
