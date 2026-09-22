@@ -31,6 +31,9 @@ class ArgoWorkflowEngine(WorkflowEngine):
         argo_token: str,
         argo_host: str,
         argo_namespace: str,
+        argo_artifact_access_key: str,
+        argo_artifact_secret_key: str,
+        argo_artifact_endpoint: str,
     ):
         self.name = "argo"
         self.annotations_prefix = annotations_prefix
@@ -44,9 +47,12 @@ class ArgoWorkflowEngine(WorkflowEngine):
             namespace=self.argo_namespace,
             token=self.argo_token,
         )
+        self.argo_artifact_access_key = argo_artifact_access_key
+        self.argo_artifact_secret_key = argo_artifact_secret_key
+        self.argo_artifact_endpoint = argo_artifact_endpoint
 
     def authenticate(self, token: str) -> None:
-        return  # No authentication needed for the argo engine
+        return  # No authentication implemented for the argo engine
 
     def health_check(self) -> bool:
         try:
@@ -97,3 +103,24 @@ class ArgoWorkflowEngine(WorkflowEngine):
             namespace=self.argo_namespace,
         )
         return created_wfl.metadata.name  # type: ignore
+
+    def get_artifact_download_url(self, artifact_key: str):
+        health = self.health_check()
+        if not health:
+            raise UpstreamWorkflowEngineError(
+                f"{self.name} workflow engine is not healthy, cannot retrieve artifact"
+            )
+        from minio import Minio
+
+        client = Minio(
+            endpoint=self.argo_artifact_endpoint,
+            access_key=self.argo_artifact_access_key,
+            secret_key=self.argo_artifact_secret_key,
+            secure=False,
+        )
+
+        url = client.presigned_get_object(
+            "my-bucket",
+            artifact_key,
+        )
+        return url

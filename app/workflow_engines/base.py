@@ -25,6 +25,10 @@ class WorkflowEngine(ABC):
     def submit_workflow(self, workflow: Workflow, token: str) -> str:
         pass
 
+    @abstractmethod
+    def get_artifact_download_url(self, artifact_key: str) -> str:
+        pass
+
     def parse_workflow(self, data: dict) -> Workflow:
         annotations = data["metadata"].get("annotations", {})
         prefix = self.annotations_prefix

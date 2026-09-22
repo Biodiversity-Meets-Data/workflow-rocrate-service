@@ -24,3 +24,6 @@ class DummyEngine(WorkflowEngine):
 
     def submit_workflow(self, workflow: Workflow, token: str) -> str:
         return "dummy_workflow_id"
+
+    def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
+        return f"https://dummy.url/{workflow_id}/{artifact_key}"

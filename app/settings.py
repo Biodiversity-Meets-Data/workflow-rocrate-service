@@ -39,6 +39,9 @@ class LocalEngineSettings(BaseSettings):
     argo_token: str = "local-argo-token"
     argo_host: str = "http://localhost:2746"
     argo_namespace: str = "argo"
+    argo_artifact_access_key: str = "minio-access-key"
+    argo_artifact_secret_key: str = "minio-secret-key"
+    argo_artifact_endpoint: str = "localhost:9000"
 
 
 app_settings = AppSettings()

@@ -32,6 +32,20 @@ class Settings:
                 argo_token=local_engine_settings.argo_token,
                 argo_host=local_engine_settings.argo_host,
                 argo_namespace=local_engine_settings.argo_namespace,
+                argo_artifact_access_key=local_engine_settings.argo_artifact_access_key,
+                argo_artifact_secret_key=local_engine_settings.argo_artifact_secret_key,
+                argo_artifact_endpoint=local_engine_settings.argo_artifact_endpoint,
+            ),
+            "juelich": ArgoWorkflowEngine(
+                annotations_prefix=local_engine_settings.annotations_prefix,
+                labels_prefix=local_engine_settings.labels_prefix,
+                base_url=local_engine_settings.base_url,
+                argo_token=local_engine_settings.argo_token,
+                argo_host=local_engine_settings.argo_host,
+                argo_namespace=local_engine_settings.argo_namespace,
+                argo_artifact_access_key=local_engine_settings.argo_artifact_access_key,
+                argo_artifact_secret_key=local_engine_settings.argo_artifact_secret_key,
+                argo_artifact_endpoint=local_engine_settings.argo_artifact_endpoint,
             ),
         }
 

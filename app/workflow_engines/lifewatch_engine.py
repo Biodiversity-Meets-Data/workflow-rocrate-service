@@ -101,3 +101,6 @@ class LifeWatchEngine(WorkflowEngine):
         response.raise_for_status()
         workflow_id = response.json().get("name")
         return workflow_id
+
+    def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
+        raise NotImplementedError("Not implemented yet for LifeWatch engine")
