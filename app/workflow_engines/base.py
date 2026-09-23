@@ -1,6 +1,18 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from dataclasses import dataclass
 
-from app.argo.models import Annotations, Author, Workflow
+from app.argo.models import Annotations, Author, Workflow, WorkflowStatus
+
+
+@dataclass(frozen=True)
+class EngineArtifactStream:
+    crate_path: str
+    name: str
+    content_url: str
+    content_stream: Iterator[bytes]
+    encoding_format: str | None = None
+    content_size: int | None = None
 
 
 class WorkflowEngine(ABC):
@@ -18,11 +30,19 @@ class WorkflowEngine(ABC):
         pass
 
     @abstractmethod
-    def get_workflow(self, workflow_id: str, **kwargs) -> Workflow:
+    def get_workflow(self, workflow_id: str, token: str | None = None) -> Workflow:
         pass
 
     @abstractmethod
     def submit_workflow(self, workflow: Workflow, token: str) -> str:
+        pass
+
+    @abstractmethod
+    def iterate_attached_artifacts(
+        self,
+        workflow_status: WorkflowStatus,
+        workflow_id: str,
+    ) -> Iterator[EngineArtifactStream]:
         pass
 
     @abstractmethod

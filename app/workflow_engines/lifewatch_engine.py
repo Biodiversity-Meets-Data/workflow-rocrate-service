@@ -1,16 +1,17 @@
 import json
+from collections.abc import Iterator
 
 import jwt
 import requests
 from jwt import PyJWKClient
 
-from app.argo.models import Workflow
+from app.argo.models import Workflow, WorkflowStatus
 from app.exceptions import (
     AuthenticationError,
     WorkflowNotFoundError,
     WorkflowParsingError,
 )
-from app.workflow_engines.base import WorkflowEngine
+from app.workflow_engines.base import EngineArtifactStream, WorkflowEngine
 
 
 class LifeWatchEngine(WorkflowEngine):
@@ -49,8 +50,9 @@ class LifeWatchEngine(WorkflowEngine):
     def health_check(self):
         pass
 
-    def get_workflow(self, workflow_id: str, token: str) -> Workflow:
-
+    def get_workflow(self, workflow_id: str, token: str | None = None) -> Workflow:
+        if token is None:
+            raise AuthenticationError("LifeWatch access token is required")
         headers = {"Authorization": f"Bearer {token}", "accept": "application/json"}
 
         response = requests.get(
@@ -101,6 +103,15 @@ class LifeWatchEngine(WorkflowEngine):
         response.raise_for_status()
         workflow_id = response.json().get("name")
         return workflow_id
+
+    def iterate_attached_artifacts(
+        self,
+        workflow_status: WorkflowStatus,
+        workflow_id: str,
+    ) -> Iterator[EngineArtifactStream]:
+        raise NotImplementedError(
+            "Attached artifact streaming is not implemented for LifeWatch engine"
+        )
 
     def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
         raise NotImplementedError("Not implemented yet for LifeWatch engine")

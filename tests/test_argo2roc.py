@@ -34,10 +34,15 @@ def test_generate_WROC_from_workflow(successful_workflow):
 
 
 def test_generate_WRROC_from_workflow(successful_workflow):
+    engine = DummyEngine(
+        annotations_prefix=dummy_engine_settings.annotations_prefix,
+        labels_prefix=dummy_engine_settings.labels_prefix,
+        base_url=dummy_engine_settings.base_url,
+    )
+
     wrroc = generate_WRROC_from_workflow(
         successful_workflow,
-        prefix="dummy",
-        base_url="https://example.com",
+        engine=engine,
         validate=True,
     )
     assert wrroc is not None

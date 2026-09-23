@@ -1,4 +1,5 @@
 import json
+import shutil
 import tempfile
 from pathlib import Path
 from typing import Annotated, Literal
@@ -15,6 +16,7 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 
 from app.api.dependencies import check_auth, get_engine
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
@@ -30,6 +32,10 @@ from app.workflow_engines.base import WorkflowEngine
 router = APIRouter(prefix="/workflow-engines/{engine}/workflows", tags=["workflows"])
 
 
+def _cleanup_rocrate_temp_dir(temp_dir: Path) -> None:
+    shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 @router.get("/{workflow_id}/workflow.yaml")
 def get_workflow(
     engine: str,
@@ -38,11 +44,11 @@ def get_workflow(
     token: str = Depends(check_auth),
 ):
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
-    wfl = reconstruct_workflow(wfl, wfl_engine)
-    wfl = yaml.safe_dump(wfl, sort_keys=False)
+    reconstructed_wfl = reconstruct_workflow(wfl, wfl_engine)
+    wfl_yaml = yaml.safe_dump(reconstructed_wfl, sort_keys=False)
 
     return Response(
-        content=wfl,
+        content=wfl_yaml,
         media_type="application/yaml",
         headers={"Content-Disposition": "attachment; filename=workflow.yaml"},
     )
@@ -66,10 +72,10 @@ def get_template(
             status_code=404,
         )
 
-    template = yaml.safe_dump(template, sort_keys=False)
+    template_yaml = yaml.safe_dump(template, sort_keys=False)
 
     return Response(
-        content=template,
+        content=template_yaml,
         media_type="application/yaml",
         headers={"Content-Disposition": "attachment; filename=template.yaml"},
     )
@@ -109,8 +115,7 @@ def get_metadata(
         elif profile == "WRROC":
             rocrate = generate_WRROC_from_workflow(
                 wfl,
-                prefix=wfl_engine.annotations_prefix,
-                base_url=wfl_engine.base_url,
+                engine=wfl_engine,
                 validate=validate_rocrate,
             )
     except ValueError as e:
@@ -134,6 +139,13 @@ def get_rocrate(
             "Workflow RO-Crate ('WROC') or Workflow Run RO-Crate ('WRROC')."
         ),
     ] = "WROC",
+    attach_workflow_outputs: Annotated[
+        bool,
+        Query(
+            description="Whether to attach the workflow outputs to the RO-Crate. "
+            "This can increase the size of the RO-Crate significantly."
+        ),
+    ] = False,
     validate_rocrate: Annotated[
         bool,
         Query(
@@ -145,15 +157,16 @@ def get_rocrate(
     token: str = Depends(check_auth),
 ):
     wfl = wfl_engine.get_workflow(workflow_id, token=token)
+    temp_dir = Path(tempfile.mkdtemp())
 
     workflow_yaml = yaml.safe_dump(
         reconstruct_workflow(wfl, wfl_engine), sort_keys=False
     )
-    workflow_file = Path(tempfile.mkdtemp()) / "workflow.yaml"
+    workflow_file = temp_dir / "workflow.yaml"
     workflow_file.write_text(workflow_yaml, encoding="utf-8")
 
     template_yaml = yaml.safe_dump(reconstruct_template(wfl), sort_keys=False)
-    template_file = Path(tempfile.mkdtemp()) / "template.yaml"
+    template_file = temp_dir / "template.yaml"
     template_file.write_text(template_yaml, encoding="utf-8")
 
     try:
@@ -170,18 +183,20 @@ def get_rocrate(
             workflow_run_yaml = yaml.safe_dump(
                 reconstruct_workflow_run(wfl, wfl_engine), sort_keys=False
             )
-            workflow_run_file = Path(tempfile.mkdtemp()) / "workflow-run.yaml"
+            workflow_run_file = temp_dir / "workflow-run.yaml"
             workflow_run_file.write_text(workflow_run_yaml, encoding="utf-8")
             rocrate = generate_WRROC_from_workflow(
                 wfl,
-                prefix=wfl_engine.annotations_prefix,
-                base_url=wfl_engine.base_url,
+                engine=wfl_engine,
                 workflow_file=workflow_file,
                 template_file=template_file,
                 workflow_run_file=workflow_run_file,
+                staging_dir=temp_dir,
                 validate=validate_rocrate,
+                attached=attach_workflow_outputs,
             )
     except ValueError as e:
+        _cleanup_rocrate_temp_dir(temp_dir)
         return Response(content=str(e), media_type="text/plain", status_code=500)
 
     return StreamingResponse(
@@ -190,6 +205,10 @@ def get_rocrate(
         headers={
             "Content-Disposition": f"attachment; filename={wfl_engine}_{workflow_id}.zip"
         },
+        background=BackgroundTask(
+            _cleanup_rocrate_temp_dir,
+            temp_dir=temp_dir,
+        ),
     )
 
 
@@ -213,10 +232,10 @@ def get_workflow_run(
             status_code=404,
         )
 
-    workflow_run = yaml.safe_dump(workflow_run, sort_keys=False)
+    workflow_run_yaml = yaml.safe_dump(workflow_run, sort_keys=False)
 
     return Response(
-        content=workflow_run,
+        content=workflow_run_yaml,
         media_type="application/yaml",
         headers={"Content-Disposition": "attachment; filename=workflow-run.yaml"},
     )

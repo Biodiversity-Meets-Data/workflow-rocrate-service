@@ -1,4 +1,6 @@
 import os
+import tempfile
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import cast
@@ -8,6 +10,7 @@ from rocrate.rocrate import ROCrate
 from rocrate_validator.services import validate_metadata_as_dict
 
 from app.argo.models import Workflow, WorkflowRun, WorkflowStatus
+from app.workflow_engines.base import EngineArtifactStream, WorkflowEngine
 
 
 def generate_WROC_from_workflow(
@@ -40,26 +43,38 @@ def generate_WROC_from_workflow(
 
 def generate_WRROC_from_workflow(
     wfl: Workflow,
-    prefix: str,
-    base_url: str,
+    engine: WorkflowEngine,
     workflow_file: Path | None = None,
     template_file: Path | None = None,
     workflow_run_file: Path | None = None,
+    staging_dir: Path | None = None,
     validate: bool = False,
+    attached: bool = False,
 ) -> ROCrate:
     wfl = cast(WorkflowRun, wfl)
     crate = ROCrate()
 
-    _add_metadata_from_annotations(wfl, crate, prefix)
+    _add_metadata_from_annotations(wfl, crate, engine.annotations_prefix)
     wfl_object = _add_workflow_definition_files(
-        wfl, crate, workflow_file, template_file, base_url
+        wfl, crate, workflow_file, template_file, engine.base_url
     )
     _add_workflow_params(wfl, crate, wfl_object, wfl_run=True)
     _add_create_action(wfl, crate, wfl_object)
-    _add_workflow_run_file(wfl, crate, workflow_run_file, base_url)
+    _add_workflow_run_file(wfl, crate, workflow_run_file, engine.base_url)
     _add_date_published(wfl, crate)
     wfl_status = wfl.status
-    _add_artifacts(wfl_status, crate, base_url)
+    workflow_id = wfl.metadata.name
+    if workflow_id is None:
+        raise ValueError("Workflow ID is missing")
+
+    _add_artifacts(
+        workflow_status=wfl_status,
+        crate=crate,
+        workflow_id=workflow_id,
+        engine=engine,
+        attached=attached,
+        staging_dir=staging_dir,
+    )
     crate.metadata.profile = "https://w3id.org/ro/crate/1.1"
     crate.metadata["conformsTo"] = [
         {"@id": "https://w3id.org/ro/crate/1.1"},
@@ -316,37 +331,159 @@ def _add_workflow_params(
             )
 
 
-def _add_artifacts(wfl_status: WorkflowStatus, crate: ROCrate, base_url: str) -> None:
+def _add_artifact_stream_to_crate(
+    crate: ROCrate,
+    file_path: str,
+    content_stream: Iterator[bytes],
+    properties: dict,
+    staging_dir: Path | None = None,
+) -> object:
+    """
+    Write an artifact stream to a temporary file and add it to the RO-Crate.
 
+    `file_path` is the path that should exist inside the crate, e.g.:
+
+        node-123/main.log
+        node-123/results/result.csv
+    """
+    with tempfile.NamedTemporaryFile(
+        mode="wb",
+        delete=False,
+        dir=staging_dir,
+    ) as f:
+        temp_path = Path(f.name)
+
+        try:
+            for chunk in content_stream:
+                if chunk:
+                    f.write(chunk)
+
+        except Exception:
+            temp_path.unlink(missing_ok=True)
+            raise
+
+    try:
+        artifact_file = crate.add_file(
+            source=temp_path,
+            dest_path=file_path,
+            properties=properties,
+        )
+    except Exception:
+        temp_path.unlink(missing_ok=True)
+        raise
+
+    return artifact_file
+
+
+def _add_artifacts(
+    workflow_status: WorkflowStatus,
+    crate: ROCrate,
+    engine: WorkflowEngine,
+    workflow_id: str,
+    attached: bool,
+    staging_dir: Path | None = None,
+) -> None:
+    if attached:
+        _add_attached_artifacts(
+            workflow_status=workflow_status,
+            crate=crate,
+            engine=engine,
+            workflow_id=workflow_id,
+            staging_dir=staging_dir,
+        )
+        return
+
+    _add_artifact_links(
+        workflow_status=workflow_status,
+        crate=crate,
+        base_url=engine.base_url,
+    )
+
+
+def _add_artifact_links(
+    workflow_status: WorkflowStatus,
+    crate: ROCrate,
+    base_url: str,
+) -> None:
     artifact_url = base_url.rsplit("/", 1)[0]
-    bucket_name = wfl_status.artifactRepositoryRef.artifactRepository.s3.bucket
-
+    bucket_name = workflow_status.artifactRepositoryRef.artifactRepository.s3.bucket
     create_action_object = crate.get_by_type("CreateAction")[0]
-    for node_name, node in wfl_status.nodes.items():
+
+    for node in workflow_status.nodes.values():
         if node.outputs is None:
             continue
 
         for artifact in node.outputs.artifacts:
+            if (
+                artifact.artifactGC is not None
+                and artifact.artifactGC.get("strategy") == "OnWorkflowCompletion"
+            ):
+                continue
+
+            remote_artifact_url = (
+                f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}"
+            )
+
             if artifact.name == "main-logs":
                 artifact_file = crate.add_file(
-                    source=f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}",
+                    source=remote_artifact_url,
                     properties={
                         "name": "main.log",
-                        "description": f"Main logs from node {node_name}",
                         "encodingFormat": "text/plain",
+                        "contentUrl": remote_artifact_url,
                     },
                 )
             else:
                 artifact_file = crate.add_file(
-                    source=f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}",
+                    source=remote_artifact_url,
                     properties={
                         "name": os.path.basename(artifact.s3.key),
-                        "description": f"Artifact {artifact.name} from node {node_name}",
                         "encodingFormat": "application/octet-stream",
+                        "contentUrl": remote_artifact_url,
                     },
                 )
 
-            create_action_object.append_to("result", artifact_file)
+            create_action_object.append_to(
+                "result",
+                artifact_file,
+            )
+
+
+def _add_attached_artifacts(
+    workflow_status: WorkflowStatus,
+    crate: ROCrate,
+    engine: WorkflowEngine,
+    workflow_id: str,
+    staging_dir: Path | None = None,
+) -> None:
+    create_action_object = crate.get_by_type("CreateAction")[0]
+
+    for artifact in engine.iterate_attached_artifacts(
+        workflow_status=workflow_status,
+        workflow_id=workflow_id,
+    ):
+        artifact = cast(EngineArtifactStream, artifact)
+        properties: dict[str, object] = {
+            "name": artifact.name,
+            "contentUrl": artifact.content_url,
+        }
+        if artifact.encoding_format is not None:
+            properties["encodingFormat"] = artifact.encoding_format
+        if artifact.content_size is not None:
+            properties["contentSize"] = artifact.content_size
+
+        artifact_file = _add_artifact_stream_to_crate(
+            crate=crate,
+            file_path=artifact.crate_path,
+            content_stream=artifact.content_stream,
+            properties=properties,
+            staging_dir=staging_dir,
+        )
+
+        create_action_object.append_to(
+            "result",
+            artifact_file,
+        )
 
 
 def validate_rocrate(

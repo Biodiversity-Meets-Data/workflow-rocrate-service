@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.43.99",
+    "bs4>=0.0.2",
     "cryptography>=50.0.1",
     "fastapi[standard]>=0.141.1",
     "hera>=7.1.0",
@@ -18,8 +19,11 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "boto3-stubs>=1.43.100",
+    "mypy>=2.3.1",
     "pytest>=9.1.1",
     "ruff>=0.16.2",
+    "types-pyyaml>=6.0.12.20260906",
 ]
 
 [tool.ruff.lint]
@@ -28,3 +32,9 @@ extend-ignore = ["B008"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
+
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+module = ["rocrate.*", "rocrate_validator.*"]
+ignore_missing_imports = true

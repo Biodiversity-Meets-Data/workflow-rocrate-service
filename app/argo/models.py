@@ -22,6 +22,7 @@ class Artifact(ArgoBaseModel):
     name: str
     path: str | None = None
     s3: ArtifactS3
+    artifactGC: dict | None = None
 
 
 class NodeOutputs(ArgoBaseModel):
@@ -29,6 +30,7 @@ class NodeOutputs(ArgoBaseModel):
 
 
 class Node(ArgoBaseModel):
+    id: str
     name: str
     outputs: NodeOutputs | None = None
 
