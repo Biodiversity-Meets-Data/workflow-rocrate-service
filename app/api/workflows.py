@@ -258,6 +258,13 @@ async def submit_workflow(
             examples=[{"param1": "value1", "param2": "value2"}],
         ),
     ],
+    callback_url: Annotated[
+        str | None,
+        Form(
+            description="Callback URL to notify once the workflow is completed",
+            examples=[""],
+        ),
+    ] = None,
     wfl_engine: WorkflowEngine = Depends(get_engine),
     token: str = Depends(check_auth),
 ):
@@ -274,7 +281,7 @@ async def submit_workflow(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    workflow_id = wfl_engine.submit_workflow(wfl, token=token)
+    workflow_id = wfl_engine.submit_workflow(wfl, token, callback_url)
     return Response(
         content=json.dumps({"workflow_id": workflow_id}),
         media_type="application/json",

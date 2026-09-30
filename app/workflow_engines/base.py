@@ -34,7 +34,7 @@ class WorkflowEngine(ABC):
         pass
 
     @abstractmethod
-    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+    def submit_workflow(self, workflow: Workflow, token: str, *kwargs) -> str:
         pass
 
     @abstractmethod

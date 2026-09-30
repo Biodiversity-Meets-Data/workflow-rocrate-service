@@ -8,11 +8,19 @@ from typing import cast
 import boto3
 import requests
 from bs4 import BeautifulSoup
+from hera.exceptions import BadRequest as HeraBadRequestException
 from hera.exceptions import NotFound as HeraNotFoundException
 from hera.exceptions import Unauthorized
 from hera.workflows import Workflow as HeraWorkflow
 from hera.workflows import WorkflowsService
-from hera.workflows.models import WorkflowCreateRequest
+from hera.workflows.models import (
+    Arguments,
+    Container,
+    EnvVar,
+    Parameter,
+    Template,
+    WorkflowCreateRequest,
+)
 from pydantic import ValidationError
 from requests.exceptions import ConnectionError
 
@@ -104,7 +112,9 @@ class ArgoWorkflowEngine(WorkflowEngine):
             ) from e
         return wfl
 
-    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+    def submit_workflow(
+        self, workflow: Workflow, token: str, callback_url: str | None = None
+    ) -> str:
         health = self.health_check()
         if not health:
             raise UpstreamWorkflowEngineError(
@@ -114,6 +124,46 @@ class ArgoWorkflowEngine(WorkflowEngine):
         wfl_dict = self.serialize_workflow(workflow, snake_case=True)
 
         hera_workflow = cast(HeraWorkflow, HeraWorkflow.from_dict(wfl_dict))
+
+        if callback_url:
+            if hera_workflow.workflow_template_ref:
+                callback_param = Parameter(
+                    name="callback-url",
+                    value=callback_url,
+                )
+                if hera_workflow.arguments is None:
+                    hera_workflow.arguments = Arguments(parameters=[callback_param])
+                else:
+                    hera_workflow.arguments.parameters.append(  # type: ignore
+                        callback_param
+                    )
+            else:
+                hera_workflow.on_exit = "exit-handler"
+
+                exit_handler_template = Template(
+                    name="exit-handler",
+                    container=Container(
+                        name="exit-handler",
+                        image="appropriate/curl",
+                        command=["sh", "-c"],
+                        args=[
+                            'curl -X POST "$CALLBACK_URL/$WORKFLOW_NAME"',
+                        ],
+                        env=[
+                            EnvVar(
+                                name="CALLBACK_URL",
+                                value=callback_url,
+                            ),
+                            EnvVar(
+                                name="WORKFLOW_NAME",
+                                value="{{workflow.name}}",
+                            ),
+                        ],
+                    ),
+                )
+
+                hera_workflow.templates.append(exit_handler_template)
+
         try:
             created_wfl = self.workflows_service.create_workflow(
                 WorkflowCreateRequest(workflow=hera_workflow.build()),  # type: ignore
@@ -121,6 +171,8 @@ class ArgoWorkflowEngine(WorkflowEngine):
             )
         except HeraNotFoundException as e:
             raise WorkflowNotFoundError(f"Failed to create workflow, {e!s}")
+        except HeraBadRequestException as e:
+            raise WorkflowParsingError(f"Failed to create workflow, bad request: {e!s}")
         return created_wfl.metadata.name  # type: ignore
 
     def iterate_attached_artifacts(
