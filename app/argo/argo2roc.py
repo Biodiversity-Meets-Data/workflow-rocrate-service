@@ -59,7 +59,7 @@ def generate_WRROC_from_workflow(
         wfl, crate, workflow_file, template_file, engine.base_url
     )
     _add_workflow_params(wfl, crate, wfl_object, wfl_run=True)
-    _add_create_action(wfl, crate, wfl_object)
+    _add_create_action(wfl, crate, wfl_object, engine.labels_prefix)
     _add_workflow_run_file(wfl, crate, workflow_run_file, engine.base_url)
     _add_date_published(wfl, crate)
     wfl_status = wfl.status
@@ -175,15 +175,15 @@ def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
     crate.root_dataset["name"] = workflow_annotations.title
 
 
-def _add_create_action(wfl: WorkflowRun, crate: ROCrate, wfl_object: File):
-
-    LABEL_PREFIX = "workflows.argoproj.io"
+def _add_create_action(
+    wfl: WorkflowRun, crate: ROCrate, wfl_object: File, labels_prefix: str
+):
 
     agent = Person(
         crate,
         identifier="#workflow-agent",
         properties={
-            "name": wfl.metadata.labels[f"{LABEL_PREFIX}/creator"],
+            "name": wfl.metadata.labels[f"{labels_prefix}/creator"],
         },
     )
     crate.add(agent)
