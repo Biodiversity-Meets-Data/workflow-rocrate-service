@@ -6,6 +6,15 @@ from app.main import app
 client = TestClient(app)
 
 
+def test_get_workflow_yaml_without_auth_header_for_no_auth_deployment():
+
+    response = client.get(
+        "/workflow-engines/dummy/workflows/test-workflow/workflow.yaml"
+    )
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("application/yaml")
+
+
 def test_get_workflow_yaml():
 
     response = client.get(

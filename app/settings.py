@@ -9,6 +9,12 @@ from pydantic_settings import (
     YamlConfigSettingsSource,
 )
 
+from app.auth import (
+    AuthProvider,
+    KeycloakJWTAuthProvider,
+    NoAuthProvider,
+    StaticTokenAuthProvider,
+)
 from app.workflow_engines.argo_engine import ArgoConnectionConfig, ArgoWorkflowEngine
 from app.workflow_engines.base import WorkflowEngine
 from app.workflow_engines.dummy_engine import DummyEngine
@@ -29,15 +35,40 @@ class AppSettings(BaseModel):
     name: str
 
 
+class NoAuthSettings(BaseModel):
+    type: Literal["none"]
+
+
+class StaticTokenAuthSettings(BaseModel):
+    type: Literal["static_token"]
+    token: SecretStr | None = None
+    token_env: str | None = None
+
+
+class KeycloakJWTAuthSettings(BaseModel):
+    type: Literal["keycloak_jwt"]
+    issuer: str
+    audience: str | None = "account"
+    algorithms: list[str] = Field(default_factory=lambda: ["RS256"])
+    jwks_url: str | None = None
+
+
+AuthSettings = Annotated[
+    NoAuthSettings | StaticTokenAuthSettings | KeycloakJWTAuthSettings,
+    Field(discriminator="type"),
+]
+
+
 class DeploymentBase(BaseModel):
     base_url: str
     annotations_prefix: str
     labels_prefix: str
+    auth: AuthSettings
 
 
 class LifeWatchDeploymentSettings(DeploymentBase):
     engine: Literal["lifewatch"]
-    keycloak_issuer: str
+    api_endpoint: str
 
 
 class DummyDeploymentSettings(DeploymentBase):
@@ -108,6 +139,7 @@ class AppRuntime(BaseModel):
 
     app_name: str
     engines: dict[str, WorkflowEngine]
+    authenticators: dict[str, AuthProvider]
 
 
 def _load_service_settings() -> ServiceSettings:
@@ -125,10 +157,10 @@ def _load_service_settings() -> ServiceSettings:
 def _build_engine(settings: DeploymentSettings) -> WorkflowEngine:
     if isinstance(settings, LifeWatchDeploymentSettings):
         return LifeWatchEngine(
-            keycloak_issuer=settings.keycloak_issuer,
             base_url=settings.base_url,
             annotations_prefix=settings.annotations_prefix,
             labels_prefix=settings.labels_prefix,
+            api_endpoint=settings.api_endpoint,
         )
 
     if isinstance(settings, DummyDeploymentSettings):
@@ -150,6 +182,32 @@ def _build_engine(settings: DeploymentSettings) -> WorkflowEngine:
             artifact_secret_key=settings.argo.artifact_secret_key.get_secret_value(),
             artifact_endpoint=settings.argo.artifact_endpoint,
         ),
+    )
+
+
+def _build_auth_provider(settings: AuthSettings) -> AuthProvider:
+    if isinstance(settings, NoAuthSettings):
+        return NoAuthProvider()
+
+    if isinstance(settings, StaticTokenAuthSettings):
+        token_value = settings.token.get_secret_value() if settings.token else None
+        token_env = settings.token_env
+
+        if token_value and token_env:
+            raise ValueError(
+                "Static token auth must define either 'token' or 'token_env', not both"
+            )
+
+        return StaticTokenAuthProvider.from_value_or_env(
+            token=token_value,
+            token_env=token_env,
+        )
+
+    return KeycloakJWTAuthProvider(
+        issuer=settings.issuer,
+        audience=settings.audience,
+        algorithms=settings.algorithms,
+        jwks_url=settings.jwks_url,
     )
 
 
@@ -211,6 +269,10 @@ settings = AppRuntime(
     app_name=service_settings.app.name,
     engines={
         name: _build_engine(deployment)
+        for name, deployment in service_settings.deployments.items()
+    },
+    authenticators={
+        name: _build_auth_provider(deployment.auth)
         for name, deployment in service_settings.deployments.items()
     },
 )

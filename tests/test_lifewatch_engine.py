@@ -10,7 +10,6 @@ lifewatch_engine_settings = get_lifewatch_deployment()
 def test_get_workflow():
     ## this is just an initial implementation needs to be expanded with more comprehensive tests
     engine = LifeWatchEngine(
-        keycloak_issuer=lifewatch_engine_settings.keycloak_issuer,
         base_url=lifewatch_engine_settings.base_url,
         annotations_prefix=lifewatch_engine_settings.annotations_prefix,
         labels_prefix=lifewatch_engine_settings.labels_prefix,

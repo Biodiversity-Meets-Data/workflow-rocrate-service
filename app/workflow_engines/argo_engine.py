@@ -76,9 +76,6 @@ class ArgoWorkflowEngine(WorkflowEngine):
             aws_secret_access_key=argo.artifact_secret_key,
         )
 
-    def authenticate(self, token: str) -> None:
-        return  # No authentication implemented for the argo engine
-
     def health_check(self) -> bool:
         try:
             self.workflows_service.list_workflows(limit="1")

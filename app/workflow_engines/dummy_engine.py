@@ -12,9 +12,6 @@ class DummyEngine(WorkflowEngine):
         self.labels_prefix = labels_prefix
         self.base_url = base_url
 
-    def authenticate(self, token: str) -> None:
-        return  # No authentication needed for the dummy engine
-
     def health_check(self) -> bool:
         return True
 

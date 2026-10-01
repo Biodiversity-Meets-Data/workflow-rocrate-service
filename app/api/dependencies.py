@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.auth import AuthProvider
 from app.exceptions import AuthenticationError
 from app.settings import settings
 from app.workflow_engines.base import WorkflowEngine
@@ -19,22 +20,32 @@ def get_engine(engine: str) -> WorkflowEngine:
     return wfl_engine
 
 
-bearer_scheme = HTTPBearer()
+def get_auth_provider(engine: str) -> AuthProvider:
+    try:
+        auth_provider = settings.authenticators[engine]
+    except KeyError:
+        raise HTTPException(
+            detail=f"Unknown workflow engine: {engine}",
+            status_code=404,
+        )
+    return auth_provider
+
+
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def check_auth(
     credentials: Annotated[
-        HTTPAuthorizationCredentials,
+        HTTPAuthorizationCredentials | None,
         Depends(bearer_scheme),
     ],
-    wfl_engine: WorkflowEngine = Depends(get_engine),
+    auth_provider: AuthProvider = Depends(get_auth_provider),
 ) -> str:
     try:
-        wfl_engine.authenticate(token=credentials.credentials)
+        token = credentials.credentials if credentials else None
+        return auth_provider.authenticate(token=token)
     except AuthenticationError as e:
-        print(f"Authentication failed: {e}")
         raise HTTPException(
             status_code=401,
             detail=str(e),
         )
-    return credentials.credentials
