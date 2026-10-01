@@ -13,6 +13,7 @@ def test_get_workflow():
         base_url=lifewatch_engine_settings.base_url,
         annotations_prefix=lifewatch_engine_settings.annotations_prefix,
         labels_prefix=lifewatch_engine_settings.labels_prefix,
+        api_endpoint=lifewatch_engine_settings.api_endpoint,
     )
 
     with open("tests/fixtures/successful_workflow.json") as f:

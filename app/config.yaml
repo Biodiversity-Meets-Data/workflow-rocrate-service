@@ -4,22 +4,31 @@ app:
 deployments:
   lifewatch:
     engine: lifewatch
-    base_url: https://workflows-demo.bmd.lifewatch.dev/v1
+    base_url: http://localhost:8000/workflow-engines/lifewatch/workflows
     annotations_prefix: lifewatch
     labels_prefix: workflows.lifewatch.eu
-    keycloak_issuer: https://auth.lifewatch.eu/realms/lifewatcheric
+    auth:
+      type: keycloak_jwt
+      issuer: lifewatch-keycloak-issuer-from-env
+      audience: account
+    api_endpoint: https://workflows-demo.bmd.lifewatch.dev/v1
 
   dummy:
     engine: dummy
     base_url: http://localhost:8000/workflow-engines/dummy/workflows
     annotations_prefix: dummy
     labels_prefix: workflows.argoproj.io
+    auth:
+      type: none
 
   local:
     engine: argo
     base_url: http://localhost:8000/workflow-engines/local/workflows
     annotations_prefix: tbd
-    labels_prefix: tbd
+    labels_prefix: workflows.argoproj.io
+    auth:
+      type: static_token
+      token: local-api-token-from-env
     argo:
       token: local-argo-token
       host: http://localhost:2746
@@ -33,6 +42,10 @@ deployments:
     base_url: http://localhost:8000/workflow-engines/juelich/workflows
     annotations_prefix: juelich
     labels_prefix: workflows.fz-juelich.de
+    auth:
+      type: keycloak_jwt
+      issuer: juelich-keycloak-issuer-from-env
+      audience: account
     argo:
       token: juelich-argo-token
       host: http://localhost:32000

@@ -1,7 +1,6 @@
 import json
 from collections.abc import Iterator
 
-import jwt
 import requests
 
 from app.argo.models import Workflow, WorkflowStatus
@@ -20,6 +19,7 @@ class LifeWatchEngine(WorkflowEngine):
         base_url: str,
         annotations_prefix: str,
         labels_prefix: str,
+        api_endpoint: str,
     ):
         self.name = "lifewatch"
         self.base_url = base_url
@@ -36,7 +36,7 @@ class LifeWatchEngine(WorkflowEngine):
         headers = {"Authorization": f"Bearer {token}", "accept": "application/json"}
 
         response = requests.get(
-            f"{self.base_url}/{workflow_id}/status", headers=headers
+            f"{self.api_endpoint}/{workflow_id}/status", headers=headers
         )
         if response.status_code == 404:
             raise WorkflowNotFoundError(f"Workflow with ID {workflow_id} not found")
