@@ -144,7 +144,11 @@ class ArgoWorkflowEngine(WorkflowEngine):
                         image="appropriate/curl",
                         command=["sh", "-c"],
                         args=[
-                            'curl -X POST "$CALLBACK_URL/$WORKFLOW_NAME"',
+                            'echo "Posting to $CALLBACK_URL/$WORKFLOW_NAME" && \
+                             curl -X POST "$CALLBACK_URL/$WORKFLOW_NAME" \
+                                  -H "Content-Type: application/json" \
+                                    -d \'{"workflow_id":"{{workflow.name}}",\
+                                        "status":"{{workflow.status}}"}\'',
                         ],
                         env=[
                             EnvVar(
