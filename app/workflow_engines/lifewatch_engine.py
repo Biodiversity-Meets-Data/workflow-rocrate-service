@@ -111,7 +111,7 @@ class LifeWatchEngine(WorkflowEngine):
 
         payload = {
             "parameters": parameters,
-            "workflow_template_ref": {"name": "bmd-terrestrial-sdm"},
+            "workflow_template_ref": {"name": workflow_template_ref["name"]},
         }
 
         headers = {
