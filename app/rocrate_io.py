@@ -9,7 +9,6 @@ from fastapi import HTTPException, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from rocrate.model import ContextEntity
 from rocrate.rocrate import ROCrate
-from yaml.scanner import ScannerError
 
 
 def _copy_and_validate_zip(
@@ -68,13 +67,13 @@ def _process_crate_sync(
         with open(workflow_path, "r") as f:
             workflow = yaml.load(
                 f,
-                Loader=yaml.CLoader,
+                Loader=yaml.CSafeLoader,
             )
 
-    except ScannerError as e:
+    except yaml.YAMLError:
         raise HTTPException(
             status_code=400,
-            detail=(f"Workflow file corrupted: {e.problem} {e.context}"),
+            detail="Workflow file contains invalid or unsupported YAML",
         )
 
     if "license" not in crate.root_dataset:
