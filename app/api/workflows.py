@@ -268,7 +268,13 @@ async def submit_workflow(
     wfl_engine: WorkflowEngine = Depends(get_engine),
     token: str = Depends(check_auth),
 ):
-    parameters = json.loads(workflow_parameters)
+    try:
+        parameters = json.loads(workflow_parameters)
+    except json.JSONDecodeError as e:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid JSON for workflow_parameters: {e}",
+        ) from e
 
     if not isinstance(parameters, dict):
         raise HTTPException(
