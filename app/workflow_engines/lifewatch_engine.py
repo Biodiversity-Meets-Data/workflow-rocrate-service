@@ -41,8 +41,52 @@ class LifeWatchEngine(WorkflowEngine):
         if response.status_code == 404:
             raise WorkflowNotFoundError(f"Workflow with ID {workflow_id} not found")
         response.raise_for_status()
+
+        status = response.json()
+        template_spec = status.get("storedWorkflowTemplateSpec", {})
+        annotations = template_spec.get("workflowMetadata", {}).get("annotations", {})
+        if not annotations:
+            annotations = {}
+
+        data = {}
+        data["metadata"] = {
+            "name": workflow_id,
+            "annotations": {
+                f"{self.annotations_prefix}/author_names": annotations.get(
+                    f"{self.annotations_prefix}/author_names", "unknown"
+                ),
+                f"{self.annotations_prefix}/author_ids": annotations.get(
+                    f"{self.annotations_prefix}/author_ids", "unknown"
+                ),
+                f"{self.annotations_prefix}/license": annotations.get(
+                    f"{self.annotations_prefix}/license", "unknown"
+                ),
+                f"{self.annotations_prefix}/keywords": annotations.get(
+                    f"{self.annotations_prefix}/keywords", "unknown"
+                ),
+                "workflows.argoproj.io/description": annotations.get(
+                    "workflows.argoproj.io/description", "unknown"
+                ),
+                "workflows.argoproj.io/title": annotations.get(
+                    "workflows.argoproj.io/title", "unknown"
+                ),
+            },
+            "labels": {
+                f"{self.labels_prefix}/creator": template_spec.get(
+                    "workflowMetadata", {}
+                )
+                .get("labels", {})
+                .get(f"{self.labels_prefix}/creator", "unknown")
+            },
+        }
+
+        data["spec"] = {
+            "workflowTemplateRef": template_spec.get("workflowTemplateRef", {}),
+            "arguments": template_spec.get("arguments", {}),
+        }
+        data["status"] = status
         try:
-            wfl = self.parse_workflow(response.json())
+            wfl = self.parse_workflow(data)
         except KeyError as e:
             raise WorkflowParsingError(
                 f"Failed to parse workflow with ID {workflow_id}, missing key: {e.args[0]}"
@@ -76,7 +120,7 @@ class LifeWatchEngine(WorkflowEngine):
         }
 
         response = requests.post(
-            self.base_url + "/submit/from_template",
+            self.api_endpoint + "/submit/from_template",
             headers=headers,
             data=json.dumps(payload),
         )

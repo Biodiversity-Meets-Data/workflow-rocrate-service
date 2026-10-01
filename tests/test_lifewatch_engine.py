@@ -19,21 +19,9 @@ def test_get_workflow():
     with open("tests/fixtures/successful_workflow.json") as f:
         workflow_fixture = json.load(f)
 
-    annotations = workflow_fixture["metadata"]["annotations"]
-    workflow_fixture["metadata"]["annotations"] = {
-        f"{engine.annotations_prefix}/author_names": annotations["dummy/author_names"],
-        f"{engine.annotations_prefix}/author_ids": annotations["dummy/author_ids"],
-        f"{engine.annotations_prefix}/keywords": annotations["dummy/keywords"],
-        f"{engine.annotations_prefix}/license": annotations["dummy/license"],
-        "workflows.argoproj.io/description": annotations[
-            "workflows.argoproj.io/description"
-        ],
-        "workflows.argoproj.io/title": annotations["workflows.argoproj.io/title"],
-    }
-
     with patch("app.workflow_engines.lifewatch_engine.requests.get") as mock_get:
         mock_response = Mock()
-        mock_response.json.return_value = workflow_fixture
+        mock_response.json.return_value = workflow_fixture["status"]
         mock_response.raise_for_status.return_value = None
 
         mock_get.return_value = mock_response
@@ -43,7 +31,7 @@ def test_get_workflow():
             token="fake-token",
         )
 
-    assert result.metadata.name == workflow_fixture["metadata"]["name"]
+    assert result.metadata.name == "test-workflow"
     assert (
         result.metadata.annotations.title
         == workflow_fixture["metadata"]["annotations"]["workflows.argoproj.io/title"]
