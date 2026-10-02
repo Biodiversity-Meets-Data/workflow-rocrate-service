@@ -38,14 +38,56 @@ The local API is available at <http://127.0.0.1:8000>. Interactive API documenta
 
 ## Configuration
 
-`app/config.yaml` defines the application name and its workflow-engine deployments. Settings can be overridden through `.env` using `__` as the nested-key delimiter. For example:
+`app/config.yaml` defines the application name and the workflow-engine deployments available to the API. Edit this file to add, remove, or configure deployments. The top-level `app.name` is the service name; each entry under `deployments` is identified by its key, which is used in API paths such as `/workflow-engines/local/workflows`.
+
+Every deployment requires these shared settings:
+
+- `engine`: `argo`, `lifewatch`, or `dummy`.
+- `base_url`: this service's workflow route for the deployment.
+- `annotations_prefix` and `labels_prefix`: metadata prefixes used when reading and writing workflows.
+- `auth`: one of the authentication configurations described below.
+
+Choose the engine according to how the workflow service is reached:
+
+- `argo` connects directly to an Argo Workflows instance. It requires an `argo` block with `host`, `namespace`, `token`, `artifact_access_key`, `artifact_secret_key`, and `artifact_endpoint`.
+- `lifewatch` connects to Argo through the LifeWatch Workflow API and requires `api_endpoint`.
+- `dummy` is for development when no workflow instance is available; it has no additional engine settings.
+
+The `auth.type` field selects authentication for requests to this service. Use `none` for no authentication, `static_token` for a shared token, or `keycloak_jwt` to validate Keycloak JWTs. Static token auth accepts either `token` or `token_env` (the name of an environment variable containing the token), but not both. Keycloak JWT auth requires `issuer` and optionally accepts `audience` (defaults to `account`), `algorithms` (defaults to `[RS256]`), and `jwks_url`.
+
+For example, a minimal Argo deployment has this shape:
+
+```yaml
+app:
+	name: workflow-rocrate-service
+
+deployments:
+	local:
+		engine: argo
+		base_url: http://localhost:8000/workflow-engines/local/workflows
+		annotations_prefix: example
+		labels_prefix: workflows.argoproj.io
+		auth:
+			type: static_token
+			token_env: LOCAL_API_TOKEN
+		argo:
+			host: http://localhost:2746
+			namespace: argo
+			token: replace-with-argo-token
+			artifact_access_key: replace-with-access-key
+			artifact_secret_key: replace-with-secret-key
+			artifact_endpoint: localhost:9000
+```
+
+Settings can be overridden through `.env` or the process environment, using `__` as the nested-key delimiter. Environment values take precedence over YAML. For example:
 
 ```dotenv
 DEPLOYMENTS__LOCAL__ARGO__HOST=http://localhost:2746
 DEPLOYMENTS__LOCAL__ARGO__TOKEN=replace-with-your-argo-token
+DEPLOYMENTS__LOCAL__AUTH__TOKEN=replace-with-your-api-token
 ```
 
-The supplied `.env.example` illustrates the supported environment-variable naming and includes sample values. Treat those values as examples, not as working credentials or production configuration.
+Environment variable names use the deployment key in uppercase. Keep credentials in `.env` or a deployment secret manager rather than committing real values to YAML. The supplied `.env.example` illustrates the naming convention with sample values; they are not working credentials. By default, the service reads `app/config.yaml`.
 
 ## API overview
 
