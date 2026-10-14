@@ -13,14 +13,6 @@ deployments:
       audience: account
     api_endpoint: https://workflows-demo.bmd.lifewatch.dev/v1
 
-  dummy:
-    engine: dummy
-    base_url: http://localhost:8000/workflow-engines/dummy/workflows
-    annotations_prefix: dummy
-    labels_prefix: workflows.argoproj.io
-    auth:
-      type: none
-
   local:
     engine: argo
     base_url: http://localhost:8000/workflow-engines/local/workflows
@@ -33,9 +25,6 @@ deployments:
       token: local-argo-token
       host: http://localhost:2746
       namespace: argo
-      artifact_access_key: minio-access-key
-      artifact_secret_key: minio-secret-key
-      artifact_endpoint: localhost:9000
 
   juelich:
     engine: argo
@@ -50,6 +39,3 @@ deployments:
       token: juelich-argo-token
       host: http://localhost:32000
       namespace: argo
-      artifact_access_key: juelich-artifact-access-key
-      artifact_secret_key: juelich-artifact-secret-key
-      artifact_endpoint: s3.juelich.example.org

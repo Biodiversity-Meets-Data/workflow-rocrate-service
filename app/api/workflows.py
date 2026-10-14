@@ -118,6 +118,7 @@ def get_metadata(
                 engine=wfl_engine,
                 validate=validate_rocrate,
                 token=token,
+                attached=False,
             )
     except ValueError as e:
         return Response(content=str(e), media_type="text/plain", status_code=500)
@@ -140,13 +141,6 @@ def get_rocrate(
             "Workflow RO-Crate ('WROC') or Workflow Run RO-Crate ('WRROC')."
         ),
     ] = "WROC",
-    attach_workflow_outputs: Annotated[
-        bool,
-        Query(
-            description="Whether to attach the workflow outputs to the RO-Crate. "
-            "This can increase the size of the RO-Crate significantly."
-        ),
-    ] = False,
     validate_rocrate: Annotated[
         bool,
         Query(
@@ -194,7 +188,7 @@ def get_rocrate(
                 workflow_run_file=workflow_run_file,
                 staging_dir=temp_dir,
                 validate=validate_rocrate,
-                attached=attach_workflow_outputs,
+                attached=True,
                 token=token,
             )
     except ValueError as e:

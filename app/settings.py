@@ -12,7 +12,6 @@ from pydantic_settings import (
 from app.auth import (
     AuthProvider,
     KeycloakJWTAuthProvider,
-    NoAuthProvider,
     StaticTokenAuthProvider,
 )
 from app.workflow_engines.argo_engine import ArgoConnectionConfig, ArgoWorkflowEngine
@@ -35,10 +34,6 @@ class AppSettings(BaseModel):
     name: str
 
 
-class NoAuthSettings(BaseModel):
-    type: Literal["none"]
-
-
 class StaticTokenAuthSettings(BaseModel):
     type: Literal["static_token"]
     token: SecretStr | None = None
@@ -54,7 +49,7 @@ class KeycloakJWTAuthSettings(BaseModel):
 
 
 AuthSettings = Annotated[
-    NoAuthSettings | StaticTokenAuthSettings | KeycloakJWTAuthSettings,
+    StaticTokenAuthSettings | KeycloakJWTAuthSettings,
     Field(discriminator="type"),
 ]
 
@@ -79,9 +74,6 @@ class ArgoSettings(BaseModel):
     token: SecretStr
     host: str
     namespace: str
-    artifact_access_key: SecretStr
-    artifact_secret_key: SecretStr
-    artifact_endpoint: str
 
 
 class ArgoDeploymentSettings(DeploymentBase):
@@ -178,16 +170,11 @@ def _build_engine(settings: DeploymentSettings) -> WorkflowEngine:
             token=settings.argo.token.get_secret_value(),
             host=settings.argo.host,
             namespace=settings.argo.namespace,
-            artifact_access_key=settings.argo.artifact_access_key.get_secret_value(),
-            artifact_secret_key=settings.argo.artifact_secret_key.get_secret_value(),
-            artifact_endpoint=settings.argo.artifact_endpoint,
         ),
     )
 
 
 def _build_auth_provider(settings: AuthSettings) -> AuthProvider:
-    if isinstance(settings, NoAuthSettings):
-        return NoAuthProvider()
 
     if isinstance(settings, StaticTokenAuthSettings):
         token_value = settings.token.get_secret_value() if settings.token else None

@@ -42,10 +42,6 @@ class WorkflowEngine(ABC):
     ) -> Iterator[EngineArtifactStream]:
         pass
 
-    @abstractmethod
-    def get_artifact_download_url(self, bucket: str, artifact_key: str) -> str:
-        pass
-
     def parse_workflow(self, data: dict) -> Workflow:
         annotations = data["metadata"].get("annotations", {})
         prefix = self.annotations_prefix

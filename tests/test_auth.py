@@ -2,15 +2,9 @@ import pytest
 
 from app.auth import (
     KeycloakJWTAuthProvider,
-    NoAuthProvider,
     StaticTokenAuthProvider,
 )
 from app.exceptions import AuthenticationError
-
-
-def test_no_auth_provider_accepts_missing_token():
-    provider = NoAuthProvider()
-    assert provider.authenticate(None) == ""
 
 
 def test_static_token_provider_accepts_correct_token():

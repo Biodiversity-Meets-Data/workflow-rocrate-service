@@ -49,11 +49,11 @@ Every deployment requires these shared settings:
 
 Choose the engine according to how the workflow service is reached:
 
-- `argo` connects directly to an Argo Workflows instance. It requires an `argo` block with `host`, `namespace`, `token`, `artifact_access_key`, `artifact_secret_key`, and `artifact_endpoint`.
+- `argo` connects directly to an Argo Workflows instance. It requires an `argo` block with `host`, `namespace`, and `token`.
 - `lifewatch` connects to Argo through the LifeWatch Workflow API and requires `api_endpoint`.
-- `dummy` is for development when no workflow instance is available; it has no additional engine settings.
+- `dummy` is for development and testing when no workflow instance is available; it has no additional engine settings.
 
-The `auth.type` field selects authentication for requests to this service. Use `none` for no authentication, `static_token` for a shared token, or `keycloak_jwt` to validate Keycloak JWTs. Static token auth accepts either `token` or `token_env` (the name of an environment variable containing the token), but not both. Keycloak JWT auth requires `issuer` and optionally accepts `audience` (defaults to `account`), `algorithms` (defaults to `[RS256]`), and `jwks_url`.
+The `auth.type` field selects authentication for requests to this service. Use `static_token` for a shared token, or `keycloak_jwt` to validate Keycloak JWTs. Static token auth accepts either `token` or `token_env` (the name of an environment variable containing the token), but not both. Keycloak JWT auth requires `issuer` and optionally accepts `audience` (defaults to `account`), `algorithms` (defaults to `[RS256]`), and `jwks_url`.
 
 For example, a minimal Argo deployment has this shape:
 
@@ -74,9 +74,6 @@ deployments:
 			host: http://localhost:2746
 			namespace: argo
 			token: replace-with-argo-token
-			artifact_access_key: replace-with-access-key
-			artifact_secret_key: replace-with-secret-key
-			artifact_endpoint: localhost:9000
 ```
 
 Settings can be overridden through `.env` or the process environment, using `__` as the nested-key delimiter. Environment values take precedence over YAML. For example:
@@ -101,7 +98,6 @@ All workflow routes are scoped by deployment name under `/workflow-engines/{engi
 | `GET /workflow-engines/{engine}/workflows/{workflow_id}/metadata` | Return WROC or WRROC metadata as JSON. |
 | `GET /workflow-engines/{engine}/workflows/{workflow_id}/rocrate` | Download a WROC or WRROC as a ZIP archive. |
 | `POST /workflow-engines/{engine}/workflows` | Submit a workflow RO-Crate ZIP with workflow parameters. |
-| `GET /workflow-engines/{engine}/bucket/{bucket}/artifacts/{artifact_key}` | Redirect to an artifact download URL. |
 
 ## Repository structure
 

@@ -30,6 +30,3 @@ class DummyEngine(WorkflowEngine):
         token: str | None = None,
     ) -> Iterator[EngineArtifactStream]:
         return iter(())
-
-    def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
-        return f"https://dummy.url/{workflow_id}/{artifact_key}"

@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import cast
 
-import boto3
 import requests
 from bs4 import BeautifulSoup
 from hera.exceptions import BadRequest as HeraBadRequestException
@@ -38,9 +37,6 @@ class ArgoConnectionConfig:
     token: str
     host: str
     namespace: str
-    artifact_access_key: str
-    artifact_secret_key: str
-    artifact_endpoint: str
 
 
 class ArgoWorkflowEngine(WorkflowEngine):
@@ -67,13 +63,6 @@ class ArgoWorkflowEngine(WorkflowEngine):
             host=self.argo_host,
             namespace=self.argo_namespace,
             token=self.argo_token,
-        )
-
-        self.s3_client = boto3.client(
-            "s3",
-            endpoint_url=f"http://{argo.artifact_endpoint}",
-            aws_access_key_id=argo.artifact_access_key,
-            aws_secret_access_key=argo.artifact_secret_key,
         )
 
     def health_check(self) -> bool:
@@ -231,13 +220,6 @@ class ArgoWorkflowEngine(WorkflowEngine):
                         encoding_format=encoding_format,
                         content_size=content_size,
                     )
-
-    def get_artifact_download_url(self, bucket: str, artifact_key: str) -> str:
-
-        return self.s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket, "Key": artifact_key},
-        )
 
 
 def _recursive_artifact_reader(

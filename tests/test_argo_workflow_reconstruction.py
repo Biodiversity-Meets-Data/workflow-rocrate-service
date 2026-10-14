@@ -3,33 +3,30 @@ import json
 import pytest
 
 from app.argo.reconstruction import reconstruct_template, reconstruct_workflow
-from app.settings import get_dummy_deployment
 from app.workflow_engines.dummy_engine import DummyEngine
-
-dummy_engine_settings = get_dummy_deployment()
 
 
 @pytest.fixture
-def successful_workflow():
+def dummy_engine():
+    return DummyEngine(
+        annotations_prefix="dummy",
+        labels_prefix="workflows.argoproj.io",
+        base_url="http://localhost:8000/workflow-engines/dummy/workflows",
+    )
+
+
+@pytest.fixture
+def successful_workflow(dummy_engine):
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
 
-    engine = DummyEngine(
-        annotations_prefix=dummy_engine_settings.annotations_prefix,
-        labels_prefix=dummy_engine_settings.labels_prefix,
-        base_url=dummy_engine_settings.base_url,
-    )
-    return engine.parse_workflow(wfl)
+    return dummy_engine.parse_workflow(wfl)
 
 
-def test_argo_workflow_reconstruction(successful_workflow):
+def test_argo_workflow_reconstruction(successful_workflow, dummy_engine):
     reconstructed_workflow = reconstruct_workflow(
         successful_workflow,
-        engine=DummyEngine(
-            annotations_prefix=dummy_engine_settings.annotations_prefix,
-            labels_prefix=dummy_engine_settings.labels_prefix,
-            base_url=dummy_engine_settings.base_url,
-        ),
+        engine=dummy_engine,
     )
 
     assert reconstructed_workflow.keys() == {"kind", "metadata", "spec"}

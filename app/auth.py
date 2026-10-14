@@ -13,11 +13,6 @@ class AuthProvider(ABC):
         pass
 
 
-class NoAuthProvider(AuthProvider):
-    def authenticate(self, token: str | None) -> str:
-        return ""
-
-
 class StaticTokenAuthProvider(AuthProvider):
     def __init__(self, *, token: str):
         self._token = token

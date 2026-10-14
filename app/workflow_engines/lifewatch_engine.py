@@ -221,9 +221,6 @@ class LifeWatchEngine(WorkflowEngine):
         response.raise_for_status()
         return response.json()["preSignedUrls"]
 
-    def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
-        raise NotImplementedError("Not implemented yet for LifeWatch engine")
-
 
 def _iter_content_and_close(response: requests.Response) -> Iterator[bytes]:
     try:

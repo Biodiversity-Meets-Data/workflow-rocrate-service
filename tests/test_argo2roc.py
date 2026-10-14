@@ -4,23 +4,24 @@ import pytest
 
 from app.argo.argo2roc import generate_WROC_from_workflow, generate_WRROC_from_workflow
 from app.argo.models import Author
-from app.settings import get_dummy_deployment
 from app.workflow_engines.dummy_engine import DummyEngine
-
-dummy_engine_settings = get_dummy_deployment()
 
 
 @pytest.fixture
-def successful_workflow():
+def dummy_engine():
+    return DummyEngine(
+        annotations_prefix="dummy",
+        labels_prefix="workflows.argoproj.io",
+        base_url="http://localhost:8000/workflow-engines/dummy/workflows",
+    )
+
+
+@pytest.fixture
+def successful_workflow(dummy_engine):
     with open("tests/fixtures/successful_workflow.json") as f:
         wfl = json.load(f)
 
-    engine = DummyEngine(
-        annotations_prefix=dummy_engine_settings.annotations_prefix,
-        labels_prefix=dummy_engine_settings.labels_prefix,
-        base_url=dummy_engine_settings.base_url,
-    )
-    return engine.parse_workflow(wfl)
+    return dummy_engine.parse_workflow(wfl)
 
 
 def test_generate_WROC_from_workflow(successful_workflow):
@@ -33,16 +34,10 @@ def test_generate_WROC_from_workflow(successful_workflow):
     assert wroc is not None
 
 
-def test_generate_WRROC_from_workflow(successful_workflow):
-    engine = DummyEngine(
-        annotations_prefix=dummy_engine_settings.annotations_prefix,
-        labels_prefix=dummy_engine_settings.labels_prefix,
-        base_url=dummy_engine_settings.base_url,
-    )
-
+def test_generate_WRROC_from_workflow(successful_workflow, dummy_engine):
     wrroc = generate_WRROC_from_workflow(
         successful_workflow,
-        engine=engine,
+        engine=dummy_engine,
         validate=True,
     )
     assert wrroc is not None

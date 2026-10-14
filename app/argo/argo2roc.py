@@ -23,9 +23,9 @@ def generate_WROC_from_workflow(
 ) -> ROCrate:
     crate = ROCrate()
 
-    _add_metadata_from_annotations(wfl, crate, prefix)
+    _add_metadata_from_annotations(wfl, crate)
     wfl_object = _add_workflow_definition_files(
-        wfl, crate, workflow_file, template_file, base_url
+        wfl, crate, workflow_file, template_file
     )
     _add_workflow_params(wfl, crate, wfl_object)
 
@@ -55,13 +55,13 @@ def generate_WRROC_from_workflow(
     wfl = cast(WorkflowRun, wfl)
     crate = ROCrate()
 
-    _add_metadata_from_annotations(wfl, crate, engine.annotations_prefix)
+    _add_metadata_from_annotations(wfl, crate)
     wfl_object = _add_workflow_definition_files(
-        wfl, crate, workflow_file, template_file, engine.base_url
+        wfl, crate, workflow_file, template_file
     )
     _add_workflow_params(wfl, crate, wfl_object, wfl_run=True)
     _add_create_action(wfl, crate, wfl_object, engine.labels_prefix)
-    _add_workflow_run_file(wfl, crate, workflow_run_file, engine.base_url)
+    _add_workflow_run_file(crate, workflow_run_file)
     _add_date_published(wfl, crate)
     wfl_status = wfl.status
     workflow_id = wfl.metadata.name
@@ -99,25 +99,20 @@ def generate_WRROC_from_workflow(
     return crate
 
 
-def _add_workflow_run_file(
-    wfl: WorkflowRun, crate: ROCrate, workflow_run_file: Path | None, base_url: str
-):
-    workflow_id = wfl.metadata.name
+def _add_workflow_run_file(crate: ROCrate, workflow_run_file: Path | None):
     create_action = cast(ContextEntity, crate.get_by_type("CreateAction")[0])
 
     # Add the workflow-run.yaml file to the RO-Crate
     workflow_run_object = cast(
         File,
         crate.add_file(
-            source=workflow_run_file
-            if workflow_run_file
-            else f"{base_url}/{workflow_id}/workflow-run.yaml",
+            source=workflow_run_file if workflow_run_file else None,
+            dest_path="workflow-run.yaml",
             properties={
                 "@type": ["File"],
                 "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
                 "description": "Argo workflow run",
                 "encodingFormat": "text/yaml",
-                "name": "workflow-run.yaml",
                 "about": {"@id": create_action["@id"]},
             },
         ),
@@ -156,7 +151,7 @@ def _add_date_published(wfl: Workflow, crate: ROCrate):
     crate.root_dataset["datePublished"] = dt.isoformat(timespec="seconds")
 
 
-def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate, prefix: str):
+def _add_metadata_from_annotations(wfl: Workflow, crate: ROCrate):
     workflow_annotations = wfl.metadata.annotations
 
     for author in workflow_annotations.authors:
@@ -229,9 +224,7 @@ def _add_workflow_definition_files(
     crate: ROCrate,
     workflow_file: Path | None,
     template_file: Path | None,
-    base_url: str,
 ) -> File:
-    workflow_id = wfl.metadata.name
 
     # Add the Argo workflow language context entity to the RO-Crate
     crate.add(
@@ -249,9 +242,8 @@ def _add_workflow_definition_files(
 
     # Add the workflow.yaml file to the RO-Crate
     workflow_object = crate.add_file(
-        source=workflow_file
-        if workflow_file
-        else f"{base_url}/{workflow_id}/workflow.yaml",
+        source=workflow_file if workflow_file else None,
+        dest_path="workflow.yaml",
         properties={
             "@type": ["File", "ComputationalWorkflow", "SoftwareSourceCode"],
             "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
@@ -260,11 +252,7 @@ def _add_workflow_definition_files(
             "author": [
                 {"@id": author["@id"]} for author in crate.get_by_type("Person")
             ],
-            "name": "workflow.yaml",
-            "softwareRequirements": {"@id": "template.yaml"}
-            if template_file
-            else {"@id": f"{base_url}/{workflow_id}/template.yaml"},
-            "contentUrl": f"{base_url}/{workflow_id}/workflow.yaml",
+            "softwareRequirements": {"@id": "template.yaml"} if template_file else None,
         },
     )
 
@@ -275,9 +263,8 @@ def _add_workflow_definition_files(
     # Add the template.yaml file to the RO-Crate if it exists
     if wfl.spec.workflowTemplateRef is not None:
         crate.add_file(
-            source=template_file
-            if template_file
-            else f"{base_url}/{workflow_id}/template.yaml",
+            source=template_file if template_file else None,
+            dest_path="template.yaml",
             properties={
                 "@type": ["File", "ComputationalWorkflow", "SoftwareSourceCode"],
                 "programmingLanguage": {"@id": "https://argoproj.github.io/workflows"},
@@ -286,7 +273,6 @@ def _add_workflow_definition_files(
                 "author": [
                     {"@id": author["@id"]} for author in crate.get_by_type("Person")
                 ],
-                "name": "template.yaml",
             },
         )
 
@@ -401,17 +387,13 @@ def _add_artifacts(
     _add_artifact_links(
         workflow_status=workflow_status,
         crate=crate,
-        base_url=engine.base_url,
     )
 
 
 def _add_artifact_links(
     workflow_status: WorkflowStatus,
     crate: ROCrate,
-    base_url: str,
 ) -> None:
-    artifact_url = base_url.rsplit("/", 1)[0]
-    bucket_name = workflow_status.artifactRepositoryRef.artifactRepository.s3.bucket
     create_action_object = crate.get_by_type("CreateAction")[0]
 
     for node in workflow_status.nodes.values():
@@ -425,27 +407,19 @@ def _add_artifact_links(
             ):
                 continue
 
-            remote_artifact_url = (
-                f"{artifact_url}/bucket/{bucket_name}/artifacts/{artifact.s3.key}"
-            )
-
             if artifact.name == "main-logs":
                 artifact_file = crate.add_file(
-                    # source=remote_artifact_url,
                     properties={
                         "name": "main.log",
                         "encodingFormat": "text/plain",
-                        "contentUrl": remote_artifact_url,
                     },
                     dest_path=node.id + "/" + artifact.name,
                 )
             else:
                 artifact_file = crate.add_file(
-                    source=remote_artifact_url,
                     properties={
                         "name": os.path.basename(artifact.s3.key),
                         "encodingFormat": "application/octet-stream",
-                        # "contentUrl": remote_artifact_url,
                     },
                     dest_path=node.id + "/" + artifact.name,
                 )

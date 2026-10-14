@@ -1,18 +1,35 @@
+from collections.abc import Iterator
+
+import pytest
 import yaml
 from fastapi.testclient import TestClient
 
+from app.api.dependencies import get_auth_provider, get_engine
+from app.auth import StaticTokenAuthProvider
 from app.main import app
+from app.workflow_engines.dummy_engine import DummyEngine
 
 client = TestClient(app)
 
 
-def test_get_workflow_yaml_without_auth_header_for_no_auth_deployment():
-
-    response = client.get(
-        "/workflow-engines/dummy/workflows/test-workflow/workflow.yaml"
+@pytest.fixture(autouse=True)
+def use_test_dependencies() -> Iterator[None]:
+    test_engine = DummyEngine(
+        annotations_prefix="dummy",
+        labels_prefix="workflows.argoproj.io",
+        base_url="http://localhost:8000/workflow-engines/dummy/workflows",
     )
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("application/yaml")
+
+    def override_get_engine(engine: str) -> DummyEngine:
+        return test_engine
+
+    def override_get_auth_provider(engine: str) -> StaticTokenAuthProvider:
+        return StaticTokenAuthProvider(token="fake-token")
+
+    app.dependency_overrides[get_engine] = override_get_engine
+    app.dependency_overrides[get_auth_provider] = override_get_auth_provider
+    yield
+    app.dependency_overrides.clear()
 
 
 def test_get_workflow_yaml():
