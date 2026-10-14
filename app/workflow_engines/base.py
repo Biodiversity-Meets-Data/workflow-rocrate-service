@@ -9,8 +9,8 @@ from app.argo.models import Annotations, Author, Workflow, WorkflowStatus
 class EngineArtifactStream:
     crate_path: str
     name: str
-    content_url: str
     content_stream: Iterator[bytes]
+    content_url: str | None = None
     encoding_format: str | None = None
     content_size: int | None = None
 
@@ -38,6 +38,7 @@ class WorkflowEngine(ABC):
         self,
         workflow_status: WorkflowStatus,
         workflow_id: str,
+        token: str | None = None,
     ) -> Iterator[EngineArtifactStream]:
         pass
 

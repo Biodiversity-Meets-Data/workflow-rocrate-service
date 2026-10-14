@@ -1,5 +1,6 @@
 import json
 from collections.abc import Iterator
+from pathlib import PurePosixPath
 
 import requests
 
@@ -94,7 +95,9 @@ class LifeWatchEngine(WorkflowEngine):
 
         return wfl
 
-    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+    def submit_workflow(
+        self, workflow: Workflow, token: str, callback_url: str | None = None
+    ) -> str:
 
         if not workflow.spec.arguments or not workflow.spec.arguments.parameters:
             parameters = []
@@ -117,6 +120,7 @@ class LifeWatchEngine(WorkflowEngine):
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
+            "accept": "application/json",
         }
 
         response = requests.post(
@@ -124,6 +128,11 @@ class LifeWatchEngine(WorkflowEngine):
             headers=headers,
             data=json.dumps(payload),
         )
+        if (response.status_code == 404) & ("Template not found" in response.text):
+            raise WorkflowParsingError(
+                "Failed to submit workflow to LifeWatch, referenced template not found"
+            )
+
         response.raise_for_status()
         workflow_id = response.json().get("name")
         return workflow_id
@@ -132,10 +141,104 @@ class LifeWatchEngine(WorkflowEngine):
         self,
         workflow_status: WorkflowStatus,
         workflow_id: str,
+        token: str | None = None,
     ) -> Iterator[EngineArtifactStream]:
-        raise NotImplementedError(
-            "Attached artifact streaming is not implemented for LifeWatch engine"
+        if token is None:
+            raise AuthenticationError("LifeWatch access token is required")
+
+        if workflow_status.storedWorkflowTemplateSpec is None:
+            raise WorkflowParsingError(
+                f"Failed to iterate attached artifacts for workflow {workflow_id}, stored workflow template spec is missing"
+            )
+
+        bucket_name = workflow_status.storedWorkflowTemplateSpec["workflowMetadata"][
+            "labels"
+        ]["workflows.lifewatch.eu/creator"]
+
+        for node in workflow_status.nodes.values():
+            if node.outputs is None:
+                continue
+
+            for artifact in node.outputs.artifacts:
+                if artifact.artifactGC is not None:
+                    strategy = artifact.artifactGC.get("strategy")
+                    if strategy == "OnWorkflowCompletion":
+                        continue
+
+                object_prefix = artifact.s3.key + "/"
+                presigned_urls = self._get_presigned_artifact_urls(
+                    object_prefix, bucket_name, token
+                )
+
+                for file in presigned_urls:
+                    object_name = file["objectName"]
+                    download_url = file["preSignedUrl"]
+                    crate_path = (
+                        node.id
+                        + "/"
+                        + artifact.name
+                        + "/"
+                        + object_name.removeprefix(object_prefix)
+                    )
+
+                    response = requests.get(download_url, stream=True)
+                    response.raise_for_status()
+
+                    content_type = response.headers.get("Content-Type")
+                    encoding_format = (
+                        content_type.split(";", 1)[0].strip() if content_type else None
+                    )
+                    content_size = _parse_content_size(
+                        response.headers.get("Content-Length")
+                    )
+
+                    yield EngineArtifactStream(
+                        crate_path=crate_path,
+                        name=PurePosixPath(crate_path).name,
+                        content_stream=_iter_content_and_close(response),
+                        encoding_format=encoding_format,
+                        content_size=content_size,
+                    )
+
+    def _get_presigned_artifact_urls(
+        self,
+        object_prefix: str,
+        bucket_name: str,
+        token: str,
+    ) -> list[dict[str, str]]:
+
+        base_url = "https://api-tesseract.beta.my.lifewatch.dev/api/files/preSignedGetObjectUrl"
+        headers = {
+            "Accept": "application/json",
+            "Origin": "https://beta.my.lifewatch.dev",
+            "Authorization": f"Bearer {token}",
+        }
+        response = requests.get(
+            base_url,
+            params={"bucketName": bucket_name, "objectName": object_prefix},
+            headers=headers,
         )
+        response.raise_for_status()
+        return response.json()["preSignedUrls"]
 
     def get_artifact_download_url(self, workflow_id: str, artifact_key: str) -> str:
         raise NotImplementedError("Not implemented yet for LifeWatch engine")
+
+
+def _iter_content_and_close(response: requests.Response) -> Iterator[bytes]:
+    try:
+        for chunk in response.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                yield chunk
+    finally:
+        response.close()
+
+
+def _parse_content_size(content_size_header: str | None) -> int | None:
+    if content_size_header is None:
+        return None
+
+    try:
+        return int(content_size_header)
+    except ValueError:
+        return None

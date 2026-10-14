@@ -117,6 +117,7 @@ def get_metadata(
                 wfl,
                 engine=wfl_engine,
                 validate=validate_rocrate,
+                token=token,
             )
     except ValueError as e:
         return Response(content=str(e), media_type="text/plain", status_code=500)
@@ -194,6 +195,7 @@ def get_rocrate(
                 staging_dir=temp_dir,
                 validate=validate_rocrate,
                 attached=attach_workflow_outputs,
+                token=token,
             )
     except ValueError as e:
         _cleanup_rocrate_temp_dir(temp_dir)

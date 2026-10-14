@@ -61,6 +61,7 @@ def test_submit_workflow_uses_workflow_template_ref():
     workflow.spec.workflowTemplateRef = {"name": "custom-template"}
     response = Mock()
     response.json.return_value = {"name": "submitted-workflow"}
+    response.text = '{"name": "submitted-workflow"}'
 
     with patch(
         "app.workflow_engines.lifewatch_engine.requests.post",

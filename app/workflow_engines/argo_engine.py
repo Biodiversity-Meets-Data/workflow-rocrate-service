@@ -180,6 +180,7 @@ class ArgoWorkflowEngine(WorkflowEngine):
         self,
         workflow_status: WorkflowStatus,
         workflow_id: str,
+        token: str | None = None,
     ) -> Iterator[EngineArtifactStream]:
         bucket_name = workflow_status.artifactRepositoryRef.artifactRepository.s3.bucket
         artifact_url = self.base_url.rsplit("/", 1)[0]

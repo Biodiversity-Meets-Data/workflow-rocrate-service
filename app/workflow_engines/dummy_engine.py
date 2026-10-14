@@ -27,6 +27,7 @@ class DummyEngine(WorkflowEngine):
         self,
         workflow_status: WorkflowStatus,
         workflow_id: str,
+        token: str | None = None,
     ) -> Iterator[EngineArtifactStream]:
         return iter(())
 

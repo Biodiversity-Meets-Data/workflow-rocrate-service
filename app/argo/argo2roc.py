@@ -50,6 +50,7 @@ def generate_WRROC_from_workflow(
     staging_dir: Path | None = None,
     validate: bool = False,
     attached: bool = False,
+    token: str | None = None,
 ) -> ROCrate:
     wfl = cast(WorkflowRun, wfl)
     crate = ROCrate()
@@ -74,6 +75,7 @@ def generate_WRROC_from_workflow(
         engine=engine,
         attached=attached,
         staging_dir=staging_dir,
+        token=token,
     )
     crate.metadata.profile = "https://w3id.org/ro/crate/1.1"
     crate.metadata["conformsTo"] = [
@@ -262,6 +264,7 @@ def _add_workflow_definition_files(
             "softwareRequirements": {"@id": "template.yaml"}
             if template_file
             else {"@id": f"{base_url}/{workflow_id}/template.yaml"},
+            "contentUrl": f"{base_url}/{workflow_id}/workflow.yaml",
         },
     )
 
@@ -382,6 +385,7 @@ def _add_artifacts(
     workflow_id: str,
     attached: bool,
     staging_dir: Path | None = None,
+    token: str | None = None,
 ) -> None:
     if attached:
         _add_attached_artifacts(
@@ -390,6 +394,7 @@ def _add_artifacts(
             engine=engine,
             workflow_id=workflow_id,
             staging_dir=staging_dir,
+            token=token,
         )
         return
 
@@ -426,12 +431,13 @@ def _add_artifact_links(
 
             if artifact.name == "main-logs":
                 artifact_file = crate.add_file(
-                    source=remote_artifact_url,
+                    # source=remote_artifact_url,
                     properties={
                         "name": "main.log",
                         "encodingFormat": "text/plain",
                         "contentUrl": remote_artifact_url,
                     },
+                    dest_path=node.id + "/" + artifact.name,
                 )
             else:
                 artifact_file = crate.add_file(
@@ -439,8 +445,9 @@ def _add_artifact_links(
                     properties={
                         "name": os.path.basename(artifact.s3.key),
                         "encodingFormat": "application/octet-stream",
-                        "contentUrl": remote_artifact_url,
+                        # "contentUrl": remote_artifact_url,
                     },
+                    dest_path=node.id + "/" + artifact.name,
                 )
 
             create_action_object.append_to(
@@ -455,18 +462,21 @@ def _add_attached_artifacts(
     engine: WorkflowEngine,
     workflow_id: str,
     staging_dir: Path | None = None,
+    token: str | None = None,
 ) -> None:
     create_action_object = crate.get_by_type("CreateAction")[0]
 
     for artifact in engine.iterate_attached_artifacts(
         workflow_status=workflow_status,
         workflow_id=workflow_id,
+        token=token,
     ):
         artifact = cast(EngineArtifactStream, artifact)
         properties: dict[str, object] = {
             "name": artifact.name,
-            "contentUrl": artifact.content_url,
         }
+        if artifact.content_url:
+            properties["contentUrl"] = artifact.content_url
         if artifact.encoding_format is not None:
             properties["encodingFormat"] = artifact.encoding_format
         if artifact.content_size is not None:
