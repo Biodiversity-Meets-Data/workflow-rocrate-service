@@ -23,7 +23,7 @@ deployments:
       token: local-api-token-from-env
     argo:
       token: local-argo-token
-      host: http://localhost:2746
+      host: http://172.17.0.1:2746
       namespace: argo
 
   juelich:

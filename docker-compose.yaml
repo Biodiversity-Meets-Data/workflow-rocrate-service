@@ -1,0 +1,19 @@
+services:
+  ro-crate-service:
+    build: .
+    image: ghcr.io/lenipe/workflow-rocrate-service
+    container_name: ro-crate-service
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app/config.yaml:/app/app/config.yaml
+    environment:
+      # Local deployment auth secrets
+      - DEPLOYMENTS__LOCAL__ARGO__TOKEN=${DEPLOYMENTS__LOCAL__ARGO__TOKEN}
+      - DEPLOYMENTS__LOCAL__AUTH__TOKEN=${DEPLOYMENTS__LOCAL__AUTH__TOKEN}
+      # Juelich deployment auth secrets
+      - DEPLOYMENTS__JUELICH__ARGO__TOKEN=${DEPLOYMENTS__JUELICH__ARGO__TOKEN}
+      - DEPLOYMENTS__JUELICH__AUTH__ISSUER=${DEPLOYMENTS__JUELICH__AUTH__ISSUER}
+      # LifeWatch deployment auth secrets
+      - DEPLOYMENTS__LIFEWATCH__AUTH__ISSUER=${DEPLOYMENTS__LIFEWATCH__AUTH__ISSUER}
+    command: ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
