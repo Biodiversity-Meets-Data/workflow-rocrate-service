@@ -20,7 +20,13 @@ class DummyEngine(WorkflowEngine):
             workflow = json.load(f)
         return self.parse_workflow(workflow)
 
-    def submit_workflow(self, workflow: Workflow, token: str) -> str:
+    def submit_workflow(
+        self, workflow: Workflow, token: str, callback_url: str | None = None
+    ) -> str:
+        if callback_url:
+            raise NotImplementedError(
+                "Callback URL handling is not implemented in DummyEngine"
+            )
         return "dummy_workflow_id"
 
     def iterate_attached_artifacts(

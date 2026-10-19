@@ -239,7 +239,6 @@ def get_workflow_run(
 
 @router.post(
     "",
-    description="This is a placeholder endpoint for workflow submission. It is not implemented yet.",
 )
 async def submit_workflow(
     engine: str,
@@ -283,7 +282,11 @@ async def submit_workflow(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    workflow_id = wfl_engine.submit_workflow(wfl, token, callback_url)
+    try:
+        workflow_id = wfl_engine.submit_workflow(wfl, token, callback_url)
+    except NotImplementedError as e:
+        raise HTTPException(status_code=501, detail=str(e))
+
     return Response(
         content=json.dumps({"workflow_id": workflow_id}),
         media_type="application/json",

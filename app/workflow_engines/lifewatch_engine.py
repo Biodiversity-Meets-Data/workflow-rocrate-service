@@ -99,6 +99,11 @@ class LifeWatchEngine(WorkflowEngine):
         self, workflow: Workflow, token: str, callback_url: str | None = None
     ) -> str:
 
+        if callback_url:
+            raise NotImplementedError(
+                "Callback URL handling is not implemented in LifeWatchEngine"
+            )
+
         if not workflow.spec.arguments or not workflow.spec.arguments.parameters:
             parameters = []
         else:
